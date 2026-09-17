@@ -18,8 +18,8 @@ export async function GET(req: NextRequest) {
     if (status) where.status = status;
     if (search) {
       where.OR = [
-        { companyName: { contains: search, mode: "insensitive" } },
-        { contactPerson: { contains: search, mode: "insensitive" } },
+        { companyName: { contains: search } },
+        { contactPerson: { contains: search } },
         { email: { contains: search } },
       ];
     }

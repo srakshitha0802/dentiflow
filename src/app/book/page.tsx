@@ -591,19 +591,33 @@ function BookAppointmentContent() {
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {slots.map((slot: any) => {
+                      const startTime = slot.startTime || slot.time;
+                      const endTime = slot.endTime;
+                      const isAvailable =
+                        slot.isAvailable !== undefined
+                          ? slot.isAvailable
+                          : slot.available !== undefined
+                          ? slot.available
+                          : true;
                       const isSelected =
-                        selectedSlot?.startTime === slot.startTime &&
-                        selectedSlot?.endTime === slot.endTime;
+                        selectedSlot?.startTime === startTime &&
+                        selectedSlot?.endTime === endTime;
 
                       return (
                         <button
-                          key={`${slot.startTime}-${slot.endTime}`}
+                          key={`${startTime}-${endTime}`}
                           type="button"
-                          disabled={!slot.isAvailable}
-                          onClick={() => setSelectedSlot(slot)}
+                          disabled={!isAvailable}
+                          onClick={() =>
+                            setSelectedSlot({
+                              startTime,
+                              endTime,
+                              availableDoctorIds: slot.availableDoctorIds || [],
+                            })
+                          }
                           className={cn(
                             "p-3 rounded-xl border text-center transition flex items-center justify-between",
-                            !slot.isAvailable
+                            !isAvailable
                               ? "bg-slate-50 border-slate-200 text-slate-300 cursor-not-allowed line-through"
                               : isSelected
                               ? "bg-teal-700 border-teal-700 text-white shadow-xs"
@@ -611,7 +625,7 @@ function BookAppointmentContent() {
                           )}
                         >
                           <span className="text-xs font-bold">
-                            {slot.startTime} – {slot.endTime}
+                            {startTime} – {endTime}
                           </span>
                           <Clock className={cn("w-3.5 h-3.5", isSelected ? "text-white" : "text-slate-400")} />
                         </button>

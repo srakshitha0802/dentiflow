@@ -14,8 +14,8 @@ export async function GET(req: NextRequest) {
     const where: Record<string, unknown> = {};
     if (search) {
       where.OR = [
-        { user: { name: { contains: search, mode: "insensitive" } } },
-        { specialization: { contains: search, mode: "insensitive" } },
+        { user: { name: { contains: search } } },
+        { specialization: { contains: search } },
         { registrationNumber: { contains: search } },
       ];
     }

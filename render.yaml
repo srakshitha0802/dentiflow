@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: dentiflow-clinic
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: AUTH_TRUST_HOST
+        value: "true"
+      - key: NEXTAUTH_URL
+        sync: false
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: NEXTAUTH_SECRET
+        fromEnvVar: AUTH_SECRET
+      - key: DATABASE_URL
+        value: file:./dev.db
+      - key: UPLOAD_DIR
+        value: ./public/uploads
+      - key: MAX_FILE_SIZE_MB
+        value: "10"

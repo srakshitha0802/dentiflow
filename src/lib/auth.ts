@@ -5,6 +5,8 @@ import bcrypt from "bcryptjs";
 import { Role } from "@/lib/permissions";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "dental-clinic-auth-secret-key-prod-32-chars",
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
@@ -58,7 +60,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role,
+          role: user.role as Role,
           avatar: user.avatar ?? undefined,
         };
       },

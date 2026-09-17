@@ -23,14 +23,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Date parameter is required (YYYY-MM-DD)" }, { status: 400 });
     }
 
-    const targetDate = new Date(dateStr);
-    if (isNaN(targetDate.getTime())) {
+    const parts = dateStr.split("-").map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) {
       return NextResponse.json({ error: "Invalid date format" }, { status: 400 });
     }
+    const targetDate = new Date(parts[0], parts[1] - 1, parts[2]);
 
-    // Convert JS day (0=Sunday..6=Saturday) to schedule day (1=Monday..6=Saturday, 7 or 0=Sunday)
+    // Convert JS day (0=Sunday..6=Saturday) to schedule day (1=Monday..6=Saturday, 7=Sunday)
     const jsDay = targetDate.getDay();
-    // In our seed, dayOfWeek 1=Monday, 2=Tuesday... 6=Saturday
     const dayOfWeek = jsDay === 0 ? 7 : jsDay;
 
     // Fetch doctors to check
@@ -80,8 +80,10 @@ export async function GET(req: NextRequest) {
 
     const slots: Array<{
       time: string;
+      startTime: string;
       endTime: string;
       available: boolean;
+      isAvailable: boolean;
       availableDoctorIds: string[];
       availableDoctors: Array<{ id: string; name: string }>;
     }> = [];
@@ -126,10 +128,14 @@ export async function GET(req: NextRequest) {
         }
       }
 
+      const isAvailable = availableDocs.length > 0;
+
       slots.push({
         time: slotStartStr,
+        startTime: slotStartStr,
         endTime: slotEndStr,
-        available: availableDocs.length > 0,
+        available: isAvailable,
+        isAvailable,
         availableDoctorIds: availableDocs.map((d) => d.id),
         availableDoctors: availableDocs,
       });

@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     if (role) where.role = role;
     if (search) {
       where.OR = [
-        { name: { contains: search, mode: "insensitive" } },
+        { name: { contains: search } },
         { email: { contains: search } },
       ];
     }

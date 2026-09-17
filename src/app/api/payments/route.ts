@@ -14,9 +14,21 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(100, parseInt(searchParams.get("limit") ?? "20"));
     const skip = (page - 1) * limit;
     const patientId = searchParams.get("patientId") ?? "";
+    const method = searchParams.get("method") ?? "";
+    const search = searchParams.get("search") ?? "";
 
     const where: Record<string, unknown> = {};
     if (patientId) where.patientId = patientId;
+    if (method) where.method = method;
+    if (search) {
+      where.OR = [
+        { paymentId: { contains: search } },
+        { referenceNumber: { contains: search } },
+        { patient: { firstName: { contains: search } } },
+        { patient: { lastName: { contains: search } } },
+        { invoice: { invoiceNumber: { contains: search } } },
+      ];
+    }
 
     const [payments, total] = await Promise.all([
       prisma.payment.findMany({
