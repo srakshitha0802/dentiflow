@@ -99,14 +99,18 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         {/* Logo */}
         <div className="flex items-center h-16 px-4 border-b border-slate-100 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
-              <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-                <path d="M12 2C8.5 2 7 5.5 7 7.5c0 1.3.4 2.5 1 3.5L6 20c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2l-2-9c.6-1 1-2.2 1-3.5C17 5.5 15.5 2 12 2z"/>
-              </svg>
+            <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-900 border border-slate-200 flex-shrink-0">
+              <img
+                src="/images/logo.png"
+                alt="DentiFlow"
+                className="w-full h-full object-cover"
+              />
             </div>
             {!collapsed && (
               <div className="overflow-hidden">
-                <div className="font-bold text-slate-900 text-sm leading-tight truncate">DentalCare Pro</div>
+                <div className="font-bold text-slate-900 text-sm leading-tight truncate">
+                  Denti<span className="text-teal-700">Flow</span>
+                </div>
                 <div className="text-xs text-slate-400 truncate">Clinic Management</div>
               </div>
             )}

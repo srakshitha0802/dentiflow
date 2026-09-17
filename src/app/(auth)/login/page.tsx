@@ -129,11 +129,15 @@ function LoginContent() {
       {/* Top Simple Bar */}
       <header className="px-6 py-4 border-b border-slate-200/80 bg-white flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-teal-700 to-sky-600 flex items-center justify-center text-white shadow-xs">
-            <Sparkles className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-900 border border-slate-200 flex items-center justify-center shadow-xs">
+            <img
+              src="/images/logo.png"
+              alt="DentiFlow"
+              className="w-full h-full object-cover"
+            />
           </div>
           <span className="font-bold text-slate-900 text-lg">
-            Dental<span className="text-teal-700">Care</span> Pro
+            Denti<span className="text-teal-700">Flow</span>
           </span>
         </Link>
 

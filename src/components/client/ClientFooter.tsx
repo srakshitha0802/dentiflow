@@ -57,12 +57,16 @@ export default function ClientFooter() {
           {/* Clinic Brand */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-teal-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                <Sparkles className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0">
+                <img
+                  src="/images/logo.png"
+                  alt="DentiFlow"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <span className="text-xl font-black tracking-tight text-white">
-                  Dental<span className="text-blue-400">Care</span> PRO
+                  Denti<span className="text-teal-400">Flow</span>
                 </span>
                 <p className="text-[11px] font-medium text-slate-400">
                   Comprehensive Dental Care & Laser Center

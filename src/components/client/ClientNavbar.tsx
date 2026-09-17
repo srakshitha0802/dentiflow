@@ -71,20 +71,24 @@ export default function ClientNavbar() {
         <div className="flex items-center justify-between h-20">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-2xl bg-teal-700 flex items-center justify-center text-white shadow-sm group-hover:bg-teal-800 transition-colors">
-              <Sparkles className="w-6 h-6" />
+            <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-slate-900 shrink-0">
+              <img
+                src="/images/logo.png"
+                alt="DentiFlow Logo"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+              />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-xl font-black tracking-tight text-slate-900">
-                  Dental<span className="text-teal-700">Care</span>
+                  Denti<span className="text-teal-700">Flow</span>
                 </span>
                 <span className="px-1.5 py-0.5 text-[10px] font-bold bg-teal-50 text-teal-800 rounded-md border border-teal-200">
-                  PRO
+                  CLINIC
                 </span>
               </div>
               <p className="text-[11px] font-medium text-slate-400 tracking-wide">
-                Multispeciality Dental Clinic
+                Premier Dental Care & Surgery
               </p>
             </div>
           </Link>

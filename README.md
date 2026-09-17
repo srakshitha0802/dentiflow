@@ -1,6 +1,12 @@
-# DentiFlow — Modern Dental Clinic & Patient Care System
+<p align="center">
+  <img src="public/images/logo.png" alt="DentiFlow Logo" width="160" style="border-radius: 24px;" />
+</p>
 
-DentiFlow is a production-grade, full-stack Dental Clinic Management and Patient Care platform built with Next.js 16 (App Router & Turbopack), TypeScript, Tailwind CSS, Prisma ORM, and SQLite/PostgreSQL.
+<h1 align="center">DentiFlow — Modern Dental Clinic & Patient Care System</h1>
+
+<p align="center">
+  <b>A production-grade, full-stack Dental Clinic Management and Patient Care platform built with Next.js 16, TypeScript, Tailwind CSS, Prisma ORM, and SQLite/PostgreSQL.</b>
+</p>
 
 ---
 
