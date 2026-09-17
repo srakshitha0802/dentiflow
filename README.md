@@ -1,5 +1,7 @@
 <p align="center">
-  <img src="public/images/logo.png" alt="DentiFlow Logo" width="160" style="border-radius: 24px;" />
+  <a href="https://github.com/srakshitha0802/dentiflow">
+    <img src="https://raw.githubusercontent.com/srakshitha0802/dentiflow/main/public/images/logo.png" alt="DentiFlow Dental Clinic Logo" width="180" />
+  </a>
 </p>
 
 <h1 align="center">DentiFlow — Modern Dental Clinic & Patient Care System</h1>
