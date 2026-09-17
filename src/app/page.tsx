@@ -230,7 +230,7 @@ export default function HomePage() {
             {/* Featured Treatment Visual Highlights */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
               {/* Featured 1 */}
-              <div className="bg-white rounded-2xl p-6 border border-slate-200 flex flex-col sm:flex-row gap-6 items-center shadow-xs">
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 flex flex-col sm:flex-row gap-6 items-center shadow-xs hover-lift">
                 <div className="w-full sm:w-1/2 rounded-xl overflow-hidden bg-slate-100 h-44">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -262,7 +262,7 @@ export default function HomePage() {
               </div>
 
               {/* Featured 2 */}
-              <div className="bg-white rounded-2xl p-6 border border-slate-200 flex flex-col sm:flex-row gap-6 items-center shadow-xs">
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 flex flex-col sm:flex-row gap-6 items-center shadow-xs hover-lift">
                 <div className="w-full sm:w-1/2 rounded-xl overflow-hidden bg-slate-100 h-44">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -329,7 +329,7 @@ export default function HomePage() {
               {filteredTreatments.map((t: any) => (
                 <div
                   key={t.id}
-                  className="bg-white rounded-2xl p-6 border border-slate-200 hover:border-teal-600 hover:shadow-md transition-all flex flex-col justify-between group"
+                  className="bg-white rounded-2xl p-6 border border-slate-200 hover:border-teal-600 hover:shadow-md transition-all flex flex-col justify-between group hover-lift"
                 >
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between">
@@ -390,7 +390,7 @@ export default function HomePage() {
               {doctors.map((doc: any) => (
                 <div
                   key={doc.id}
-                  className="bg-[#F8FAFC] rounded-2xl overflow-hidden border border-slate-200 hover:border-teal-600 hover:shadow-md transition-all flex flex-col justify-between"
+                  className="bg-[#F8FAFC] rounded-2xl overflow-hidden border border-slate-200 hover:border-teal-600 hover:shadow-md transition-all flex flex-col justify-between hover-lift"
                 >
                   <div>
                     {/* Doctor Photo */}
