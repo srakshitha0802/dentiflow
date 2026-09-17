@@ -1224,15 +1224,17 @@ function PatientPortalContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-6">
             <div className="flex items-start justify-between border-b border-slate-200 pb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold text-sm">
-                    D
-                  </div>
-                  <h2 className="text-lg font-bold text-slate-900">DentalCare Pro Clinic</h2>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-900 border border-slate-200 shrink-0">
+                  <img src="/images/logo.png" alt="DentiFlow" className="w-full h-full object-cover" />
                 </div>
-                <p className="text-xs text-slate-500 mt-1">12, Rajpath Avenue, Koramangala, Bengaluru</p>
-                <p className="text-[11px] text-slate-400">GSTIN: 29ABCDE1234F1ZX | Phone: 080-46001234</p>
+                <div>
+                  <h2 className="text-lg font-black text-slate-900">
+                    Denti<span className="text-teal-700">Flow</span> Clinic
+                  </h2>
+                  <p className="text-[11px] text-slate-500">12, Rajpath Avenue, Bengaluru</p>
+                  <p className="text-[10px] text-slate-400">GSTIN: 29ABCDE1234F1ZX | Phone: 080-46001234</p>
+                </div>
               </div>
 
               <div className="text-right">

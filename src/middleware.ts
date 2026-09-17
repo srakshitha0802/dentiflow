@@ -13,6 +13,10 @@ const publicPaths = [
   "/patient",
   "/api/patient",
   "/api/public",
+  "/images",
+  "/uploads",
+  "/logo.png",
+  "/favicon.ico",
 ];
 
 // Role-restricted paths
@@ -29,8 +33,12 @@ const roleRestrictions: Record<string, string[]> = {
 export default auth((req) => {
   const { pathname } = req.nextUrl;
 
-  // Allow public paths and home page
-  if (pathname === "/" || publicPaths.some((p) => pathname.startsWith(p))) {
+  // Allow static assets, images, public paths and home page
+  if (
+    pathname === "/" ||
+    publicPaths.some((p) => pathname.startsWith(p)) ||
+    pathname.match(/\.(png|jpg|jpeg|svg|webp|ico|gif|woff|woff2|ttf|eot)$/i)
+  ) {
     return NextResponse.next();
   }
 
@@ -58,6 +66,6 @@ export default auth((req) => {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|public).*)",
+    "/((?!_next/static|_next/image|favicon.ico|images|uploads|.*\\.(?:png|jpg|jpeg|svg|webp|ico|gif)$).*)",
   ],
 };

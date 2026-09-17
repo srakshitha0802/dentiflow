@@ -212,30 +212,30 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* CLINICAL PROCEDURES WITH IMAGES */}
-        <section id="treatments" className="py-16 sm:py-20">
+        {/* TREATMENTS & PROCEDURES */}
+        <section id="treatments" className="py-20 bg-slate-50/70 border-t border-slate-200/80">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-2xl mx-auto space-y-2 mb-12">
               <span className="px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-bold uppercase tracking-wider border border-teal-200">
-                Fee Schedule & Treatments
+                Clinical Services
               </span>
               <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-                Our Dental Treatments & Services
+                Comprehensive Dental Treatments & Procedures
               </h2>
-              <p className="text-slate-500 text-sm sm:text-base">
-                Transparent clinical pricing with certified specialists and modern equipment.
+              <p className="text-sm text-slate-500 font-normal leading-relaxed">
+                Select your dental concern or treatment to check specialist availability and receive a customized consultation.
               </p>
             </div>
 
-            {/* Visual Featured Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+            {/* Featured Treatment Visual Highlights */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
               {/* Featured 1 */}
               <div className="bg-white rounded-2xl p-6 border border-slate-200 flex flex-col sm:flex-row gap-6 items-center shadow-xs">
                 <div className="w-full sm:w-1/2 rounded-xl overflow-hidden bg-slate-100 h-44">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/images/treatment_cleaning.jpg"
-                    alt="Ultrasonic Teeth Cleaning"
+                    alt="Dental Cleaning & Scaling"
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -245,15 +245,17 @@ export default function HomePage() {
                   </span>
                   <h3 className="text-lg font-bold text-slate-900">Teeth Cleaning & Scaling</h3>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Ultrasonic plaque and tartar removal with stain polishing and fluoride coating.
+                    Ultrasonic plaque and tartar removal with stain polishing and enamel protection.
                   </p>
                   <div className="pt-2 flex items-center justify-between">
-                    <span className="text-base font-black text-slate-900 font-mono">₹1,500</span>
+                    <span className="text-xs font-semibold text-teal-700 bg-teal-50 px-2 py-1 rounded-md border border-teal-200/60">
+                      Doctor Consultation Included
+                    </span>
                     <Link
                       href="/book"
-                      className="px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-lg transition"
+                      className="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-lg transition"
                     >
-                      Book Session
+                      Select Concern
                     </Link>
                   </div>
                 </div>
@@ -275,13 +277,15 @@ export default function HomePage() {
                   </span>
                   <h3 className="text-lg font-bold text-slate-900">Clear Invisible Aligners</h3>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Discreet 3D planned clear aligners to straighten teeth with zero brackets.
+                    Discreet 3D digital alignment to straighten smiles comfortably with zero metal brackets.
                   </p>
                   <div className="pt-2 flex items-center justify-between">
-                    <span className="text-base font-black text-slate-900 font-mono">₹45,000</span>
+                    <span className="text-xs font-semibold text-sky-700 bg-sky-50 px-2 py-1 rounded-md border border-sky-200/60">
+                      3D Scan & Evaluation
+                    </span>
                     <Link
                       href="/book"
-                      className="px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-lg transition"
+                      className="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-lg transition"
                     >
                       Consult Doctor
                     </Link>
@@ -348,18 +352,16 @@ export default function HomePage() {
                   </div>
 
                   <div className="pt-4 mt-3 border-t border-slate-100 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] text-slate-400 block uppercase font-medium">Standard Fee</span>
-                      <span className="text-base font-black text-slate-900 font-mono">
-                        {formatCurrency(t.price)}
-                      </span>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                      <ShieldCheck className="w-4 h-4 text-teal-700" />
+                      <span className="font-medium">Specialist Care</span>
                     </div>
 
                     <Link
                       href={`/book?treatmentId=${t.id}`}
                       className="px-3.5 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold transition flex items-center gap-1"
                     >
-                      <span>Book</span>
+                      <span>Book Visit</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>

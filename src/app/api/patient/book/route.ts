@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { generateAppointmentId, generatePatientId } from "@/lib/utils";
+import {
+  generateAppointmentId,
+  generatePatientId,
+  generateInvoiceNumber,
+  generatePaymentId,
+} from "@/lib/utils";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,6 +18,7 @@ export async function POST(req: NextRequest) {
       dateOfBirth,
       gender,
       notes,
+      dentalConcern,
       doctorId,
       treatmentIds,
       date,
@@ -20,6 +26,9 @@ export async function POST(req: NextRequest) {
       endTime,
       allergies,
       medicalConditions,
+      paymentMethod,
+      isPaid,
+      transactionRef,
     } = body;
 
     // Validate essential fields
@@ -80,8 +89,15 @@ export async function POST(req: NextRequest) {
           ...(email ? [{ email: email.trim().toLowerCase() }] : []),
         ],
       },
-      include: { medicalHistory: true },
+      include: { medicalHistory: true, dentalInfo: true },
     });
+
+    const combinedConcern = [
+      dentalConcern ? `Concern: ${dentalConcern}` : "",
+      notes ? `Notes: ${notes}` : "",
+    ]
+      .filter(Boolean)
+      .join(" | ");
 
     if (!patient) {
       const patientCount = await prisma.patient.count();
@@ -104,7 +120,7 @@ export async function POST(req: NextRequest) {
           },
           dentalInfo: {
             create: {
-              dentalConcerns: notes || undefined,
+              dentalConcerns: combinedConcern || undefined,
               treatmentConsent: true,
               privacyConsent: true,
             },
@@ -113,7 +129,19 @@ export async function POST(req: NextRequest) {
             create: {},
           },
         },
-        include: { medicalHistory: true },
+        include: { medicalHistory: true, dentalInfo: true },
+      });
+    } else if (combinedConcern) {
+      // Update existing patient dental info if needed
+      await prisma.dentalInfo.upsert({
+        where: { patientId: patient.id },
+        update: { dentalConcerns: combinedConcern },
+        create: {
+          patientId: patient.id,
+          dentalConcerns: combinedConcern,
+          treatmentConsent: true,
+          privacyConsent: true,
+        },
       });
     }
 
@@ -131,7 +159,7 @@ export async function POST(req: NextRequest) {
         startTime,
         endTime,
         status: "SCHEDULED",
-        notes: notes || "Booked online by patient via website",
+        notes: combinedConcern || "Booked online by patient via DentiFlow website",
         treatments: treatmentIds && treatmentIds.length > 0
           ? {
               create: treatmentIds.map((tId: string) => ({
@@ -155,6 +183,7 @@ export async function POST(req: NextRequest) {
           include: {
             user: {
               select: {
+                id: true,
                 name: true,
                 email: true,
               },
@@ -169,7 +198,96 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 5. Create notification for receptionist / clinic staff
+    // 5. Calculate Itemized Pricing & Generate Official Tax Invoice
+    const selectedTreatments = treatmentIds && treatmentIds.length > 0
+      ? await prisma.treatment.findMany({ where: { id: { in: treatmentIds } } })
+      : [];
+
+    const consultationFee = 500;
+    const proceduresSubtotal = selectedTreatments.reduce(
+      (sum, t) => sum + (t.price || 0),
+      0
+    );
+    const subtotal = consultationFee + proceduresSubtotal;
+    const taxPercent = 18;
+    const taxAmount = Math.round(subtotal * (taxPercent / 100));
+    const total = subtotal + taxAmount;
+    const paidAmount = isPaid ? total : 0;
+    const balanceDue = isPaid ? 0 : total;
+    const invoiceStatus = isPaid ? "PAID" : "UNPAID";
+
+    const invoiceCount = await prisma.invoice.count();
+    const invoiceNumber = generateInvoiceNumber(invoiceCount);
+
+    const invoice = await prisma.invoice.create({
+      data: {
+        invoiceNumber,
+        patientId: patient.id,
+        doctorId,
+        appointmentId: appointment.id,
+        dueDate: appointmentDate,
+        subtotal,
+        discountType: "NONE",
+        discountValue: 0,
+        discountAmount: 0,
+        taxPercent,
+        taxAmount,
+        total,
+        amountPaid: paidAmount,
+        balanceDue,
+        status: invoiceStatus,
+        notes: `Appointment: ${appointment.appointmentId} | ${combinedConcern || "Routine visit"}`,
+        items: {
+          create: [
+            {
+              description: "Doctor Consultation & Diagnostic Checkup",
+              quantity: 1,
+              unitPrice: consultationFee,
+              tax: Math.round(consultationFee * 0.18),
+              amount: consultationFee,
+            },
+            ...selectedTreatments.map((t) => ({
+              treatmentId: t.id,
+              description: t.name,
+              quantity: 1,
+              unitPrice: t.price,
+              tax: Math.round(t.price * 0.18),
+              amount: t.price,
+            })),
+          ],
+        },
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    // 6. Record Payment if Patient Paid Online
+    let paymentRecord: any = null;
+    if (isPaid) {
+      const adminUser = await prisma.user.findFirst({
+        where: { role: "ADMIN" },
+      });
+      const paymentCount = await prisma.payment.count();
+      const paymentId = generatePaymentId(paymentCount);
+
+      paymentRecord = await prisma.payment.create({
+        data: {
+          paymentId,
+          invoiceId: invoice.id,
+          patientId: patient.id,
+          amount: total,
+          method: paymentMethod === "CARD" ? "CARD" : "UPI",
+          referenceNumber:
+            transactionRef ||
+            `${paymentMethod || "UPI"}-${Date.now().toString().slice(-6)}`,
+          notes: `Instant Online Pre-Payment for ${appointment.appointmentId}`,
+          recordedById: adminUser?.id || appointment.doctor.user.id,
+        },
+      });
+    }
+
+    // 7. Create notification for clinic staff
     const staffUsers = await prisma.user.findMany({
       where: {
         role: { in: ["ADMIN", "RECEPTIONIST"] },
@@ -183,8 +301,8 @@ export async function POST(req: NextRequest) {
         data: {
           userId: staff.id,
           type: "APPOINTMENT_UPCOMING",
-          title: "New Online Booking",
-          message: `${patient.firstName} ${patient.lastName} booked an appointment for ${date} at ${startTime} with ${appointment.doctor.user.name}.`,
+          title: "New Online Booking & Bill Generated",
+          message: `${patient.firstName} ${patient.lastName} booked for ${date} at ${startTime} with ${appointment.doctor.user.name}. Bill: ${invoice.invoiceNumber} (${invoiceStatus}).`,
           link: `/appointments`,
         },
       });
@@ -193,7 +311,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: "Appointment booked successfully!",
+        message: "Appointment booked and tax invoice generated successfully!",
         data: {
           appointmentId: appointment.appointmentId,
           id: appointment.id,
@@ -206,7 +324,37 @@ export async function POST(req: NextRequest) {
           startTime: appointment.startTime,
           endTime: appointment.endTime,
           status: appointment.status,
+          dentalConcern: combinedConcern,
           treatments: appointment.treatments.map((t) => t.treatment.name),
+          invoice: {
+            id: invoice.id,
+            invoiceNumber: invoice.invoiceNumber,
+            invoiceDate: invoice.invoiceDate,
+            subtotal: invoice.subtotal,
+            taxPercent: invoice.taxPercent,
+            taxAmount: invoice.taxAmount,
+            total: invoice.total,
+            amountPaid: invoice.amountPaid,
+            balanceDue: invoice.balanceDue,
+            status: invoice.status,
+            items: invoice.items,
+          },
+          payment: paymentRecord
+            ? {
+                paymentId: paymentRecord.paymentId,
+                amount: paymentRecord.amount,
+                method: paymentRecord.method,
+                referenceNumber: paymentRecord.referenceNumber,
+                date: paymentRecord.date,
+              }
+            : null,
+          clinic: {
+            name: "DentiFlow Dental Care Clinic",
+            address: "12, Rajpath Avenue, Near City Square, Bengaluru, Karnataka - 560001",
+            phone: "080-46001234",
+            email: "care@dentiflow.com",
+            gstin: "29ABCDE1234F1ZX",
+          },
         },
       },
       { status: 201 }
