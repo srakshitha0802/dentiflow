@@ -77,11 +77,31 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Default Staff Accounts (Seeded)
 
-| Role | Email | Password |
-| :--- | :--- | :--- |
-| **Admin** | `admin@dentalcare.com` | `admin123` |
-| **Doctor** | `doctor@dentalcare.com` | `doctor123` |
-| **Receptionist** | `receptionist@dentalcare.com` | `reception123` |
+| Role | Name | Email | Password |
+| :--- | :--- | :--- | :--- |
+| **Admin** | Admin User | `admin@dentalcare.com` | `Admin@123` |
+| **Doctor / Dentist** | Dr. Ananya Rao | `dentist@dentalcare.com` | `Dentist@123` |
+| **Doctor / Dentist** | Dr. Arjun Mehta | `dentist2@dentalcare.com` | `Dentist@123` |
+| **Doctor / Dentist** | Dr. Priya Krishnan | `dentist3@dentalcare.com` | `Dentist@123` |
+| **Receptionist** | Meena Sharma | `reception@dentalcare.com` | `Recept@123` |
+| **Accountant** | Rajesh Kumar | `accountant@dentalcare.com` | `Account@123` |
+| **Inventory Manager** | Sunita Patel | `inventory@dentalcare.com` | `Invent@123` |
+| **Dental Assistant** | Ravi Shankar | `assistant@dentalcare.com` | `Recept@123` |
+
+---
+
+## Patient Portal Login (No Password Needed)
+
+Patients log in via their registered **Phone Number**, **Email**, or **Patient ID**:
+
+| Patient Name | Patient ID | Phone Number | Email |
+| :--- | :--- | :--- | :--- |
+| **Aarav Sharma** | `PAT-00001` | `9811111111` | `aarav.sharma@email.com` |
+| **Priya Reddy** | `PAT-00002` | `9822222222` | `priya.reddy@email.com` |
+| **Rahul Verma** | `PAT-00003` | `9833333333` | `rahul.verma@email.com` |
+| **Sneha Kumar** | `PAT-00004` | `9844444444` | `sneha.kumar@email.com` |
+| **Vikram Singh** | `PAT-00005` | `9855555555` | `vikram.singh@email.com` |
+| **Suresh Babu** | `PAT-00009` | `9899999999` | `suresh.babu@email.com` |
 
 ---
 
