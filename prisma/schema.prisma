@@ -1,0 +1,640 @@
+// Prisma schema with SQLite-compatible String fields (no native enums for SQLite)
+// For PostgreSQL production, switch provider to "postgresql" and restore enum types
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// AUTHENTICATION & USERS
+// ============================================================
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String
+  password       String
+  phone          String?
+  avatar         String?
+  role           String   @default("RECEPTIONIST") // Role enum: ADMIN|DENTIST|RECEPTIONIST|ASSISTANT|ACCOUNTANT|INVENTORY_MANAGER
+  isActive       Boolean  @default(true)
+  lastLogin      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  createdPatients     Patient[]       @relation("CreatedBy")
+  clinicalNotes       ClinicalNote[]
+  prescriptions       Prescription[]
+  auditLogs           AuditLog[]      @relation("PerformedBy")
+  notifications       Notification[]
+  stockMovements      StockMovement[]
+  expenses            Expense[]
+  payments            Payment[]
+  doctor              Doctor?
+
+  @@map("users")
+}
+
+// ============================================================
+// DOCTORS
+// ============================================================
+
+model Doctor {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id])
+  qualification      String
+  specialization     String
+  registrationNumber String   @unique
+  bio                String?
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  schedules       DoctorSchedule[]
+  appointments    Appointment[]
+  clinicalNotes   ClinicalNote[]
+  prescriptions   Prescription[]
+  treatmentPlans  TreatmentPlan[]
+  invoices        Invoice[]
+
+  @@map("doctors")
+}
+
+model DoctorSchedule {
+  id        String  @id @default(cuid())
+  doctorId  String
+  doctor    Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  isActive  Boolean @default(true)
+
+  @@map("doctor_schedules")
+}
+
+model Room {
+  id           String  @id @default(cuid())
+  name         String  @unique
+  description  String?
+  isActive     Boolean @default(true)
+
+  appointments Appointment[]
+
+  @@map("rooms")
+}
+
+// ============================================================
+// PATIENTS
+// ============================================================
+
+model Patient {
+  id          String   @id @default(cuid())
+  patientId   String   @unique
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime
+  gender      String   // MALE|FEMALE|OTHER
+  bloodGroup  String?
+  phone       String
+  email       String?
+  address     String?
+  city        String?
+  state       String?
+  postalCode  String?
+  country     String   @default("India")
+  avatar      String?
+  status      String   @default("ACTIVE") // ACTIVE|INACTIVE|ARCHIVED
+  registeredBy String?
+  createdBy   User?    @relation("CreatedBy", fields: [registeredBy], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  emergencyContact   EmergencyContact?
+  medicalHistory     MedicalHistory?
+  dentalInfo         DentalInfo?
+  appointments       Appointment[]
+  clinicalNotes      ClinicalNote[]
+  treatmentPlans     TreatmentPlan[]
+  prescriptions      Prescription[]
+  invoices           Invoice[]
+  payments           Payment[]
+  documents          PatientDocument[]
+  dentalChart        DentalChart?
+
+  @@map("patients")
+}
+
+model EmergencyContact {
+  id           String  @id @default(cuid())
+  patientId    String  @unique
+  patient      Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  name         String
+  relationship String
+  phone        String
+
+  @@map("emergency_contacts")
+}
+
+model MedicalHistory {
+  id          String  @id @default(cuid())
+  patientId   String  @unique
+  patient     Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  allergies   String?
+  conditions  String?
+  medications String?
+  surgeries   String?
+  diabetes    Boolean @default(false)
+  hypertension Boolean @default(false)
+  isPregnant  Boolean @default(false)
+  notes       String?
+
+  @@map("medical_histories")
+}
+
+model DentalInfo {
+  id                  String  @id @default(cuid())
+  patientId           String  @unique
+  patient             Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  previousTreatments  String?
+  dentalConcerns      String?
+  oralHygieneNotes    String?
+  smokingStatus       String  @default("NON_SMOKER") // NON_SMOKER|SMOKER|FORMER_SMOKER|OCCASIONAL
+  previousDentist     String?
+  treatmentConsent    Boolean @default(false)
+  privacyConsent      Boolean @default(false)
+
+  @@map("dental_info")
+}
+
+model PatientDocument {
+  id          String   @id @default(cuid())
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  name        String
+  type        String
+  url         String
+  size        Int
+  mimeType    String
+  uploadedAt  DateTime @default(now())
+  uploadedBy  String?
+  isArchived  Boolean  @default(false)
+
+  @@map("patient_documents")
+}
+
+// ============================================================
+// DENTAL CHART
+// ============================================================
+
+model DentalChart {
+  id        String   @id @default(cuid())
+  patientId String   @unique
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  entries DentalChartEntry[]
+
+  @@map("dental_charts")
+}
+
+model DentalChartEntry {
+  id          String      @id @default(cuid())
+  chartId     String
+  chart       DentalChart @relation(fields: [chartId], references: [id], onDelete: Cascade)
+  toothNumber Int
+  toothType   String      @default("ADULT") // ADULT|PRIMARY
+  condition   String      // HEALTHY|CARIES|FILLED|MISSING|CROWN|ROOT_CANAL|EXTRACTION_PLANNED|EXTRACTION_COMPLETED|IMPLANT|BRIDGE|WATCH|OTHER
+  notes       String?
+  recordedBy  String?
+  recordedAt  DateTime    @default(now())
+
+  @@map("dental_chart_entries")
+}
+
+// ============================================================
+// TREATMENTS
+// ============================================================
+
+model TreatmentCategory {
+  id         String      @id @default(cuid())
+  name       String      @unique
+  treatments Treatment[]
+
+  @@map("treatment_categories")
+}
+
+model Treatment {
+  id          String   @id @default(cuid())
+  treatmentId String   @unique
+  name        String
+  categoryId  String?
+  category    TreatmentCategory? @relation(fields: [categoryId], references: [id])
+  description String?
+  duration    Int
+  price       Float
+  taxPercent  Float    @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  appointmentTreatments AppointmentTreatment[]
+  treatmentPlanItems    TreatmentPlanItem[]
+  invoiceItems          InvoiceItem[]
+
+  @@map("treatments")
+}
+
+// ============================================================
+// APPOINTMENTS
+// ============================================================
+
+model Appointment {
+  id            String   @id @default(cuid())
+  appointmentId String   @unique
+  patientId     String
+  patient       Patient  @relation(fields: [patientId], references: [id])
+  doctorId      String
+  doctor        Doctor   @relation(fields: [doctorId], references: [id])
+  roomId        String?
+  room          Room?    @relation(fields: [roomId], references: [id])
+  date          DateTime
+  startTime     String
+  endTime       String
+  status        String   @default("SCHEDULED") // SCHEDULED|CONFIRMED|CHECKED_IN|IN_TREATMENT|COMPLETED|CANCELLED|NO_SHOW
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  treatments    AppointmentTreatment[]
+  clinicalNotes ClinicalNote[]
+  invoice       Invoice?
+
+  @@map("appointments")
+}
+
+model AppointmentTreatment {
+  id            String      @id @default(cuid())
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  treatmentId   String
+  treatment     Treatment   @relation(fields: [treatmentId], references: [id])
+
+  @@map("appointment_treatments")
+}
+
+// ============================================================
+// CLINICAL NOTES
+// ============================================================
+
+model ClinicalNote {
+  id              String   @id @default(cuid())
+  patientId       String
+  patient         Patient  @relation(fields: [patientId], references: [id])
+  appointmentId   String?
+  appointment     Appointment? @relation(fields: [appointmentId], references: [id])
+  doctorId        String
+  doctor          Doctor   @relation(fields: [doctorId], references: [id])
+  chiefComplaint  String?
+  examination     String?
+  diagnosis       String?
+  treatmentDone   String?
+  recommendations String?
+  followUpDate    DateTime?
+  attachments     String?
+  authorId        String
+  author          User     @relation(fields: [authorId], references: [id])
+  createdAt       DateTime @default(now())
+
+  @@map("clinical_notes")
+}
+
+// ============================================================
+// TREATMENT PLANS
+// ============================================================
+
+model TreatmentPlan {
+  id                 String   @id @default(cuid())
+  planId             String   @unique
+  patientId          String
+  patient            Patient  @relation(fields: [patientId], references: [id])
+  doctorId           String
+  doctor             Doctor   @relation(fields: [doctorId], references: [id])
+  diagnosis          String?
+  notes              String?
+  startDate          DateTime?
+  expectedCompletion DateTime?
+  status             String   @default("PROPOSED") // PROPOSED|ACCEPTED|IN_PROGRESS|COMPLETED|CANCELLED
+  priority           String   @default("MEDIUM") // LOW|MEDIUM|HIGH|URGENT
+  estimatedCost      Float    @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  items TreatmentPlanItem[]
+
+  @@map("treatment_plans")
+}
+
+model TreatmentPlanItem {
+  id            String        @id @default(cuid())
+  planId        String
+  plan          TreatmentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  treatmentId   String
+  treatment     Treatment     @relation(fields: [treatmentId], references: [id])
+  toothNumbers  String?
+  sessions      Int           @default(1)
+  estimatedCost Float
+  notes         String?
+  status        String        @default("PENDING") // PENDING|IN_PROGRESS|COMPLETED|CANCELLED
+
+  @@map("treatment_plan_items")
+}
+
+// ============================================================
+// PRESCRIPTIONS
+// ============================================================
+
+model Prescription {
+  id             String   @id @default(cuid())
+  prescriptionId String   @unique
+  patientId      String
+  patient        Patient  @relation(fields: [patientId], references: [id])
+  doctorId       String
+  doctor         Doctor   @relation(fields: [doctorId], references: [id])
+  authorId       String
+  author         User     @relation(fields: [authorId], references: [id])
+  date           DateTime @default(now())
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  items PrescriptionItem[]
+
+  @@map("prescriptions")
+}
+
+model PrescriptionItem {
+  id             String       @id @default(cuid())
+  prescriptionId String
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  medication     String
+  dosage         String
+  frequency      String
+  duration       String
+  instructions   String?
+
+  @@map("prescription_items")
+}
+
+// ============================================================
+// BILLING
+// ============================================================
+
+model Invoice {
+  id            String   @id @default(cuid())
+  invoiceNumber String   @unique
+  patientId     String
+  patient       Patient  @relation(fields: [patientId], references: [id])
+  doctorId      String?
+  doctor        Doctor?  @relation(fields: [doctorId], references: [id])
+  appointmentId String?  @unique
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+  invoiceDate   DateTime @default(now())
+  dueDate       DateTime
+  subtotal      Float
+  discountType  String   @default("NONE") // NONE|PERCENTAGE|FIXED
+  discountValue Float    @default(0)
+  discountAmount Float   @default(0)
+  taxPercent    Float    @default(0)
+  taxAmount     Float    @default(0)
+  total         Float
+  amountPaid    Float    @default(0)
+  balanceDue    Float
+  status        String   @default("UNPAID") // UNPAID|PARTIALLY_PAID|PAID|REFUNDED|CANCELLED
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  items    InvoiceItem[]
+  payments Payment[]
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  treatmentId String?
+  treatment   Treatment? @relation(fields: [treatmentId], references: [id])
+  description String
+  quantity    Int      @default(1)
+  unitPrice   Float
+  discount    Float    @default(0)
+  tax         Float    @default(0)
+  amount      Float
+
+  @@map("invoice_items")
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  paymentId       String   @unique
+  invoiceId       String
+  invoice         Invoice  @relation(fields: [invoiceId], references: [id])
+  patientId       String
+  patient         Patient  @relation(fields: [patientId], references: [id])
+  amount          Float
+  method          String   // CASH|CARD|UPI|BANK_TRANSFER|OTHER
+  referenceNumber String?
+  date            DateTime @default(now())
+  notes           String?
+  recordedById    String
+  recordedBy      User     @relation(fields: [recordedById], references: [id])
+  createdAt       DateTime @default(now())
+
+  @@map("payments")
+}
+
+// ============================================================
+// INVENTORY
+// ============================================================
+
+model InventoryCategory {
+  id    String          @id @default(cuid())
+  name  String          @unique
+  items InventoryItem[]
+
+  @@map("inventory_categories")
+}
+
+model Supplier {
+  id            String   @id @default(cuid())
+  supplierId    String   @unique
+  companyName   String
+  contactPerson String?
+  phone         String?
+  email         String?
+  address       String?
+  taxId         String?
+  paymentTerms  String?
+  status        String   @default("ACTIVE") // ACTIVE|INACTIVE
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  inventoryItems InventoryItem[]
+  purchaseOrders PurchaseOrder[]
+
+  @@map("suppliers")
+}
+
+model InventoryItem {
+  id              String   @id @default(cuid())
+  itemId          String   @unique
+  name            String
+  categoryId      String?
+  category        InventoryCategory? @relation(fields: [categoryId], references: [id])
+  sku             String?  @unique
+  supplierId      String?
+  supplier        Supplier? @relation(fields: [supplierId], references: [id])
+  batchNumber     String?
+  purchasePrice   Float
+  sellingPrice    Float?
+  quantity        Int      @default(0)
+  unit            String   @default("piece")
+  minStockLevel   Int      @default(10)
+  expiryDate      DateTime?
+  storageLocation String?
+  status          String   @default("IN_STOCK") // IN_STOCK|LOW_STOCK|OUT_OF_STOCK|EXPIRED
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  movements          StockMovement[]
+  purchaseOrderItems PurchaseOrderItem[]
+
+  @@map("inventory_items")
+}
+
+model StockMovement {
+  id            String        @id @default(cuid())
+  itemId        String
+  item          InventoryItem @relation(fields: [itemId], references: [id])
+  quantity      Int
+  type          String        // PURCHASE|CONSUMPTION|ADJUSTMENT|RETURN|EXPIRY|DAMAGED
+  reference     String?
+  notes         String?
+  performedById String
+  performedBy   User          @relation(fields: [performedById], references: [id])
+  createdAt     DateTime      @default(now())
+
+  @@map("stock_movements")
+}
+
+model PurchaseOrder {
+  id           String   @id @default(cuid())
+  orderId      String   @unique
+  supplierId   String
+  supplier     Supplier @relation(fields: [supplierId], references: [id])
+  orderDate    DateTime @default(now())
+  expectedDate DateTime?
+  status       String   @default("PENDING") // PENDING|ORDERED|RECEIVED|CANCELLED
+  total        Float    @default(0)
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  items PurchaseOrderItem[]
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id        String        @id @default(cuid())
+  orderId   String
+  order     PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  itemId    String
+  item      InventoryItem @relation(fields: [itemId], references: [id])
+  quantity  Int
+  unitPrice Float
+  amount    Float
+
+  @@map("purchase_order_items")
+}
+
+// ============================================================
+// EXPENSES
+// ============================================================
+
+model Expense {
+  id          String   @id @default(cuid())
+  expenseId   String   @unique
+  category    String   // RENT|UTILITIES|SALARIES|EQUIPMENT|SUPPLIES|MAINTENANCE|MARKETING|OTHER
+  description String
+  amount      Float
+  date        DateTime
+  method      String   // CASH|CARD|UPI|BANK_TRANSFER|OTHER
+  vendor      String?
+  receipt     String?
+  notes       String?
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("expenses")
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // APPOINTMENT_UPCOMING|APPOINTMENT_CANCELLED|APPOINTMENT_CONFIRMED|PAYMENT_RECEIVED|INVOICE_OVERDUE|LOW_INVENTORY|EXPIRY_ALERT|FOLLOW_UP_DUE|GENERAL
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+// ============================================================
+// AUDIT LOGS
+// ============================================================
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  userId       String?
+  user         User?    @relation("PerformedBy", fields: [userId], references: [id])
+  action       String
+  entity       String
+  entityId     String?
+  previousData String?
+  newData      String?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+// ============================================================
+// CLINIC SETTINGS
+// ============================================================
+
+model ClinicSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+
+  @@map("clinic_settings")
+}
