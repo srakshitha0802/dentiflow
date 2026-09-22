@@ -29,6 +29,17 @@ import {
   ChevronRight,
   Receipt,
   CalendarCheck,
+  Upload,
+  FileUp,
+  Download,
+  Trash2,
+  Star,
+  MessageSquareHeart,
+  Eye,
+  Paperclip,
+  ImageIcon,
+  FileCheck,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import ClientNavbar from "@/components/client/ClientNavbar";
@@ -80,7 +91,7 @@ function PatientPortalContent() {
     }
   }, [activeIdentifier]);
 
-  // Active Tab: "appointments" | "invoices" | "prescriptions" | "treatment-plans"
+  // Active Tab: "appointments" | "invoices" | "prescriptions" | "treatment-plans" | "documents" | "feedback"
   const [activeTab, setActiveTab] = useState<string>("appointments");
 
   // Modals
@@ -88,6 +99,7 @@ function PatientPortalContent() {
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+  const [previewDocModal, setPreviewDocModal] = useState<any | null>(null);
 
   // Selected entities for modals
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
@@ -112,6 +124,21 @@ function PatientPortalContent() {
   const [upiId, setUpiId] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  // Document Upload State
+  const [docFile, setDocFile] = useState<File | null>(null);
+  const [docName, setDocName] = useState("");
+  const [docType, setDocType] = useState("PREVIOUS_RECORD");
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+
+  // Feedback State
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [feedbackHoverRating, setFeedbackHoverRating] = useState(0);
+  const [feedbackCategory, setFeedbackCategory] = useState("GENERAL");
+  const [feedbackTreatment, setFeedbackTreatment] = useState("");
+  const [feedbackDoctor, setFeedbackDoctor] = useState("");
+  const [feedbackComment, setFeedbackComment] = useState("");
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   // Fetch Patient Portal Data
   const {
@@ -236,11 +263,113 @@ function PatientPortalContent() {
     },
   });
 
+  // Document Upload Mutation
+  const uploadDocMutation = useMutation({
+    mutationFn: async () => {
+      if (!docFile) throw new Error("Please select a file to upload.");
+      if (docFile.size > 15 * 1024 * 1024) throw new Error("File size must be under 15MB.");
+
+      setIsUploadingDoc(true);
+      const formData = new FormData();
+      formData.append("file", docFile);
+      formData.append("identifier", activeIdentifier);
+      formData.append("patientId", portalData?.patient?.id || "");
+      formData.append("name", docName.trim() || docFile.name);
+      formData.append("type", docType);
+
+      const res = await fetch("/api/patient/documents", {
+        method: "POST",
+        body: formData,
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to upload document.");
+      return json;
+    },
+    onSuccess: () => {
+      setIsUploadingDoc(false);
+      setDocFile(null);
+      setDocName("");
+      toast.success("Document uploaded successfully! It is now accessible to all your doctors and clinical staff.");
+      refetchPortal();
+      queryClient.invalidateQueries({ queryKey: ["patient-documents"] });
+    },
+    onError: (err: Error) => {
+      setIsUploadingDoc(false);
+      toast.error(err.message);
+    },
+  });
+
+  // Delete Document Mutation
+  const deleteDocMutation = useMutation({
+    mutationFn: async (docId: string) => {
+      const res = await fetch(`/api/patient/documents?id=${docId}`, {
+        method: "DELETE",
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to delete document.");
+      return json;
+    },
+    onSuccess: () => {
+      toast.success("Document removed successfully.");
+      refetchPortal();
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
+    },
+  });
+
+  // Submit Feedback Mutation
+  const submitFeedbackMutation = useMutation({
+    mutationFn: async () => {
+      if (!feedbackRating) throw new Error("Please select a star rating.");
+      if (!feedbackComment || feedbackComment.trim().length < 5) {
+        throw new Error("Please write a brief feedback comment (at least 5 characters).");
+      }
+
+      setIsSubmittingFeedback(true);
+      const res = await fetch("/api/patient/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identifier: activeIdentifier,
+          patientId: portalData?.patient?.id,
+          patientName: `${portalData?.patient?.firstName} ${portalData?.patient?.lastName}`,
+          patientPhone: portalData?.patient?.phone,
+          rating: feedbackRating,
+          category: feedbackCategory,
+          treatment: feedbackTreatment || undefined,
+          doctorName: feedbackDoctor || undefined,
+          comment: feedbackComment.trim(),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to submit feedback.");
+      return json;
+    },
+    onSuccess: () => {
+      setIsSubmittingFeedback(false);
+      setFeedbackComment("");
+      setFeedbackTreatment("");
+      setFeedbackDoctor("");
+      setFeedbackRating(5);
+      toast.success("Thank you! Your feedback has been published and updated across our clinic portal.");
+      refetchPortal();
+      queryClient.invalidateQueries({ queryKey: ["public-feedback"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-feedbacks"] });
+    },
+    onError: (err: Error) => {
+      setIsSubmittingFeedback(false);
+      toast.error(err.message);
+    },
+  });
+
   const patient = portalData?.patient;
   const appointments = portalData?.appointments || [];
   const invoices = portalData?.invoices || [];
   const prescriptions = portalData?.prescriptions || [];
   const treatmentPlans = portalData?.treatmentPlans || [];
+  const documents = portalData?.documents || [];
+  const feedbacks = portalData?.feedbacks || [];
 
   const upcomingAppointments = appointments.filter(
     (a: any) => a.status === "SCHEDULED" || a.status === "CONFIRMED"
@@ -405,6 +534,18 @@ function PatientPortalContent() {
                     label: "Treatment Plans",
                     icon: Stethoscope,
                     badge: treatmentPlans.length,
+                  },
+                  {
+                    id: "documents",
+                    label: "Medical Records & Files",
+                    icon: FileText,
+                    badge: documents.length,
+                  },
+                  {
+                    id: "feedback",
+                    label: "Feedback & Reviews",
+                    icon: Star,
+                    badge: feedbacks.length,
                   },
                 ].map((tab) => {
                   const Icon = tab.icon;
@@ -907,6 +1048,491 @@ function PatientPortalContent() {
                   )}
                 </div>
               )}
+
+              {/* TAB 5: MEDICAL RECORDS & FILE UPLOADS */}
+              {activeTab === "documents" && (
+                <div className="space-y-6 animate-in fade-in duration-150">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-teal-700" />
+                        <span>My Medical Records & Previous Files</span>
+                      </h2>
+                      <p className="text-xs text-slate-500">
+                        Upload your previous dental history, X-Rays, and prescriptions. All uploaded files are instantly accessible to doctors and clinic specialists.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 bg-teal-50 text-teal-800 border border-teal-200 text-xs font-bold rounded-full">
+                        {documents.length} File{documents.length === 1 ? "" : "s"} Stored
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* UPLOAD FORM CARD */}
+                  <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-4">
+                    <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                      <FileUp className="w-5 h-5 text-teal-700" />
+                      <h3 className="text-sm font-bold text-slate-900">Upload New File or Previous Record</h3>
+                    </div>
+
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        uploadDocMutation.mutate();
+                      }}
+                      className="space-y-4"
+                    >
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1">
+                            Document Name / Title <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. Previous OPG X-Ray 2024 or Blood Test Report"
+                            value={docName}
+                            onChange={(e) => setDocName(e.target.value)}
+                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1">
+                            Document Category
+                          </label>
+                          <select
+                            value={docType}
+                            onChange={(e) => setDocType(e.target.value)}
+                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none cursor-pointer"
+                          >
+                            <option value="PREVIOUS_RECORD">Previous Dental / Medical Record</option>
+                            <option value="X_RAY">Dental X-Ray / Radiograph / Scan</option>
+                            <option value="PRESCRIPTION">Past Prescription</option>
+                            <option value="LAB_REPORT">Lab / Blood Test Report</option>
+                            <option value="INSURANCE">Dental Insurance / ID Card</option>
+                            <option value="OTHER">Other Clinical File</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* File Selection Box */}
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Select File (PDF, PNG, JPG, JPEG, WEBP up to 15MB) <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative border-2 border-dashed border-slate-200 hover:border-teal-500 rounded-2xl p-4 sm:p-6 bg-slate-50/70 text-center transition flex flex-col items-center justify-center cursor-pointer">
+                          <input
+                            type="file"
+                            required
+                            accept=".pdf,image/*,.doc,.docx"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                const selected = e.target.files[0];
+                                setDocFile(selected);
+                                if (!docName.trim()) {
+                                  setDocName(selected.name.replace(/\.[^/.]+$/, ""));
+                                }
+                              }
+                            }}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          />
+                          <Upload className="w-8 h-8 text-teal-700 mb-2" />
+                          {docFile ? (
+                            <div className="space-y-1">
+                              <p className="text-xs font-bold text-slate-900">{docFile.name}</p>
+                              <p className="text-[11px] text-teal-700 font-medium">
+                                {(docFile.size / (1024 * 1024)).toFixed(2)} MB • Ready for upload
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="space-y-1">
+                              <p className="text-xs font-bold text-slate-800">
+                                Click or drag & drop files here
+                              </p>
+                              <p className="text-[11px] text-slate-400">
+                                Supports Dental X-Rays, PDFs, Medical Scans, and Images
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                          <ShieldCheck className="w-4 h-4 text-teal-700 shrink-0" />
+                          <span>Synced securely across all doctor workstations and clinic dashboards.</span>
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={!docFile || isUploadingDoc || uploadDocMutation.isPending}
+                          className="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer"
+                        >
+                          {isUploadingDoc ? (
+                            <span>Uploading File...</span>
+                          ) : (
+                            <>
+                              <Upload className="w-3.5 h-3.5" />
+                              <span>Upload to My Records</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* DOCUMENT LIST */}
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-bold text-slate-900">Your Uploaded Files & Scans</h3>
+
+                    {documents.length === 0 ? (
+                      <div className="p-8 bg-white rounded-2xl border border-slate-200 text-center space-y-2">
+                        <FileText className="w-8 h-8 text-slate-300 mx-auto" />
+                        <p className="font-bold text-slate-800 text-sm">No files uploaded yet</p>
+                        <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                          Upload previous dental history, scans, or prescriptions above so your dentist can review them prior to your procedure.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {documents.map((doc: any) => {
+                          const isImage = doc.mimeType?.startsWith("image/") || /\.(jpg|jpeg|png|webp|gif)$/i.test(doc.url);
+                          const formattedSize = doc.size ? (doc.size / (1024 * 1024)).toFixed(2) + " MB" : "Document";
+                          const formattedType = doc.type?.replace(/_/g, " ");
+
+                          return (
+                            <div
+                              key={doc.id}
+                              className="bg-white rounded-2xl p-4 border border-slate-200 hover:border-teal-300 shadow-xs flex flex-col justify-between space-y-3 transition"
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-100 text-teal-800 flex items-center justify-center shrink-0">
+                                  {isImage ? (
+                                    <ImageIcon className="w-5 h-5" />
+                                  ) : (
+                                    <FileText className="w-5 h-5" />
+                                  )}
+                                </div>
+
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="font-bold text-slate-900 text-xs truncate block">
+                                      {doc.name}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                                    <span className="px-2 py-0.2 rounded bg-slate-100 text-slate-700 font-semibold text-[10px]">
+                                      {formattedType}
+                                    </span>
+                                    <span>• {formattedSize}</span>
+                                  </div>
+                                  <div className="text-[10px] text-slate-400 mt-1">
+                                    Uploaded on {format(parseISO(doc.uploadedAt), "MMM d, yyyy, h:mm a")}
+                                    {doc.uploadedBy && ` • By ${doc.uploadedBy}`}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => {
+                                      if (isImage) {
+                                        setPreviewDocModal(doc);
+                                      } else {
+                                        window.open(doc.url, "_blank");
+                                      }
+                                    }}
+                                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                    <span>Preview</span>
+                                  </button>
+
+                                  <a
+                                    href={doc.url}
+                                    download={doc.name}
+                                    className="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 rounded-lg text-xs font-bold transition flex items-center gap-1.5"
+                                  >
+                                    <Download className="w-3.5 h-3.5" />
+                                    <span>Download</span>
+                                  </a>
+                                </div>
+
+                                <button
+                                  onClick={() => {
+                                    if (confirm("Are you sure you want to delete this file?")) {
+                                      deleteDocMutation.mutate(doc.id);
+                                    }
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                                  title="Delete Document"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 6: FEEDBACK & REVIEWS */}
+              {activeTab === "feedback" && (
+                <div className="space-y-6 animate-in fade-in duration-150">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                        <span>Feedback & Patient Experience</span>
+                      </h2>
+                      <p className="text-xs text-slate-500">
+                        Share your treatment experience with our doctors and team. Your review updates our clinic portal and public testimonials!
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold rounded-full flex items-center gap-1">
+                        <Star className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+                        <span>{feedbacks.length} Feedback Submitted</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* FEEDBACK SUBMISSION FORM */}
+                  <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6">
+                    <div className="border-b border-slate-100 pb-4">
+                      <h3 className="text-base font-bold text-slate-900">
+                        How was your dental consultation & treatment?
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Please rate your overall satisfaction and let us know your thoughts.
+                      </p>
+                    </div>
+
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        submitFeedbackMutation.mutate();
+                      }}
+                      className="space-y-5"
+                    >
+                      {/* Interactive Star Rating */}
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
+                          Overall Rating <span className="text-red-500">*</span>
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => {
+                              const isFilled = (feedbackHoverRating || feedbackRating) >= star;
+                              return (
+                                <button
+                                  key={star}
+                                  type="button"
+                                  onClick={() => setFeedbackRating(star)}
+                                  onMouseEnter={() => setFeedbackHoverRating(star)}
+                                  onMouseLeave={() => setFeedbackHoverRating(0)}
+                                  className="p-1 rounded-lg hover:scale-125 transition-transform duration-150 cursor-pointer focus:outline-none"
+                                >
+                                  <Star
+                                    className={cn(
+                                      "w-8 h-8 transition-colors",
+                                      isFilled
+                                        ? "text-amber-500 fill-amber-500 drop-shadow-xs"
+                                        : "text-slate-300"
+                                    )}
+                                  />
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full ml-2">
+                            {feedbackRating === 5 && "★★★★★ 5.0 - Exceptional & Pain-Free!"}
+                            {feedbackRating === 4 && "★★★★☆ 4.0 - Very Good Experience"}
+                            {feedbackRating === 3 && "★★★☆☆ 3.0 - Satisfactory Care"}
+                            {feedbackRating === 2 && "★★☆☆☆ 2.0 - Needs Improvement"}
+                            {feedbackRating === 1 && "★☆☆☆☆ 1.0 - Unsatisfactory"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {/* Category */}
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1">
+                            Feedback Category
+                          </label>
+                          <select
+                            value={feedbackCategory}
+                            onChange={(e) => setFeedbackCategory(e.target.value)}
+                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none cursor-pointer"
+                          >
+                            <option value="GENERAL">General Clinic Experience</option>
+                            <option value="DOCTOR">Doctor & Specialist Care</option>
+                            <option value="TREATMENT">Treatment Quality & Painlessness</option>
+                            <option value="CLEANLINESS">Hygiene & Class-B Sterilization</option>
+                            <option value="STAFF">Front Desk & Staff Hospitality</option>
+                          </select>
+                        </div>
+
+                        {/* Treatment */}
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1">
+                            Treatment Received (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Teeth Cleaning, Root Canal, Aligners"
+                            value={feedbackTreatment}
+                            onChange={(e) => setFeedbackTreatment(e.target.value)}
+                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                          />
+                        </div>
+
+                        {/* Doctor */}
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1">
+                            Dentist / Specialist (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Dr. Ananya Rao"
+                            value={feedbackDoctor}
+                            onChange={(e) => setFeedbackDoctor(e.target.value)}
+                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Comment */}
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Your Review & Comments <span className="text-red-500">*</span>
+                        </label>
+                        <textarea
+                          required
+                          rows={4}
+                          placeholder="Tell us about your experience, the doctor's explanation, cleanliness, pain relief, or comfort during your visit..."
+                          value={feedbackComment}
+                          onChange={(e) => setFeedbackComment(e.target.value)}
+                          className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                          <CheckCircle2 className="w-4 h-4 text-teal-700 shrink-0" />
+                          <span>Your review will appear with your first name as a verified patient.</span>
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={
+                            isSubmittingFeedback ||
+                            submitFeedbackMutation.isPending ||
+                            !feedbackComment.trim()
+                          }
+                          className="w-full sm:w-auto px-7 py-3 bg-gradient-to-r from-teal-700 to-sky-700 hover:from-teal-800 hover:to-sky-800 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md shadow-teal-700/20 transition flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                          {isSubmittingFeedback ? (
+                            <span>Submitting Review...</span>
+                          ) : (
+                            <>
+                              <Star className="w-4 h-4 fill-white" />
+                              <span>Submit Patient Feedback</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* FEEDBACK HISTORY LIST */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-bold text-slate-900">Your Previous Reviews & Feedback</h3>
+
+                    {feedbacks.length === 0 ? (
+                      <div className="p-8 bg-white rounded-2xl border border-slate-200 text-center space-y-2">
+                        <MessageSquareHeart className="w-8 h-8 text-slate-300 mx-auto" />
+                        <p className="font-bold text-slate-800 text-sm">No feedback submitted yet</p>
+                        <p className="text-xs text-slate-400">
+                          Your submitted feedback will appear here and help other patients!
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {feedbacks.map((fb: any) => (
+                          <div
+                            key={fb.id}
+                            className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-3"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex items-center">
+                                    {[1, 2, 3, 4, 5].map((s) => (
+                                      <Star
+                                        key={s}
+                                        className={cn(
+                                          "w-4 h-4",
+                                          s <= fb.rating
+                                            ? "text-amber-500 fill-amber-500"
+                                            : "text-slate-200"
+                                        )}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="text-xs font-bold text-slate-800">
+                                    {fb.rating}.0 / 5.0
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
+                                    {fb.category?.replace(/_/g, " ")}
+                                  </span>
+                                </div>
+
+                                {fb.treatment && (
+                                  <div className="text-xs text-teal-700 font-semibold">
+                                    Treatment: {fb.treatment}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="text-right">
+                                <span className="text-[11px] text-slate-400">
+                                  {format(parseISO(fb.createdAt), "MMM d, yyyy")}
+                                </span>
+                                {fb.isPublic && (
+                                  <span className="block text-[10px] text-emerald-600 font-semibold">
+                                    ✓ Live on Clinic Page
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <p className="text-xs text-slate-700 leading-relaxed bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+                              &ldquo;{fb.comment}&rdquo;
+                            </p>
+
+                            {fb.doctorName && (
+                              <div className="text-[11px] text-slate-500">
+                                Attending Specialist: <span className="font-semibold text-slate-800">{fb.doctorName}</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1332,7 +1958,58 @@ function PatientPortalContent() {
         </div>
       )}
 
+      {/* MODAL 5: DOCUMENT PREVIEW MODAL */}
+      {previewDocModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">{previewDocModal.name}</h3>
+                <p className="text-xs text-slate-400">
+                  {previewDocModal.type?.replace(/_/g, " ")} • Uploaded {format(parseISO(previewDocModal.uploadedAt), "MMM d, yyyy")}
+                </p>
+              </div>
+              <button
+                onClick={() => setPreviewDocModal(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto rounded-xl bg-slate-950 flex items-center justify-center p-2 min-h-[300px]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewDocModal.url}
+                alt={previewDocModal.name}
+                className="max-h-[60vh] max-w-full object-contain rounded-lg shadow-md"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <a
+                href={previewDocModal.url}
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Open in Fullscreen Tab</span>
+              </a>
+
+              <button
+                onClick={() => setPreviewDocModal(null)}
+                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ClientFooter />
     </div>
   );
 }
+

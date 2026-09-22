@@ -104,6 +104,7 @@ Patients log in via their registered **Phone Number**, **Email**, or **Patient I
 
 | Patient Name | Patient ID | Phone Number | Email |
 | :--- | :--- | :--- | :--- |
+| **Rakshitha Semala** | `PAT-00017` | `8639975744` | `srakshitha912@gmail.com` |
 | **Aarav Sharma** | `PAT-00001` | `9811111111` | `aarav.sharma@email.com` |
 | **Priya Reddy** | `PAT-00002` | `9822222222` | `priya.reddy@email.com` |
 | **Rahul Verma** | `PAT-00003` | `9833333333` | `rahul.verma@email.com` |

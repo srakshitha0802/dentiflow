@@ -26,6 +26,7 @@ import {
   ChevronRight,
   Activity,
   DollarSign,
+  Star,
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -52,6 +53,7 @@ const navItems: NavItem[] = [
   { label: "Suppliers", href: "/suppliers", icon: Truck, permission: "inventory:read" },
   { label: "Expenses", href: "/expenses", icon: DollarSign, permission: "expenses:read" },
   { label: "Reports", href: "/reports", icon: BarChart3, permission: "reports:read" },
+  { label: "Feedback & Reviews", href: "/feedback", icon: Star },
   { label: "Notifications", href: "/notifications", icon: Bell },
   { label: "Users", href: "/users", icon: UserCog, permission: "users:read" },
   { label: "Audit Logs", href: "/audit-logs", icon: Receipt, permission: "audit:read" },

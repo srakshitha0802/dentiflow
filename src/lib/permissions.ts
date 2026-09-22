@@ -108,6 +108,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "payments:write",
     "treatments:read",
     "doctors:read",
+    "reports:read",
   ],
   ASSISTANT: [
     "patients:read",
@@ -116,6 +117,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "clinical:read",
     "treatments:read",
     "doctors:read",
+    "reports:read",
   ],
   ACCOUNTANT: [
     "billing:read",

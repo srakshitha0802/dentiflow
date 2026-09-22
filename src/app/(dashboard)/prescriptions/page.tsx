@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import {
@@ -17,6 +17,21 @@ import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 import { calculateAge, cn } from "@/lib/utils";
 
+export default function PrescriptionsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6 animate-pulse">
+          <div className="h-10 w-64 bg-slate-200 rounded-xl" />
+          <div className="h-64 bg-white rounded-2xl border border-slate-200 p-6" />
+        </div>
+      }
+    >
+      <PrescriptionsContent />
+    </Suspense>
+  );
+}
+
 interface PrescriptionItem {
   id?: string;
   medication: string;
@@ -31,17 +46,18 @@ interface Prescription {
   prescriptionId: string;
   date: string;
   notes?: string;
+  patientId: string;
   patient: {
     id: string;
     patientId: string;
     firstName: string;
     lastName: string;
+    phone: string;
     dateOfBirth: string;
     gender: string;
-    phone: string;
   };
+  doctorId: string;
   doctor: {
-    qualification: string;
     specialization: string;
     registrationNumber: string;
     user: {
@@ -51,7 +67,7 @@ interface Prescription {
   items: PrescriptionItem[];
 }
 
-export default function PrescriptionsPage() {
+function PrescriptionsContent() {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
 

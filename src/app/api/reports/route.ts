@@ -103,7 +103,122 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    return badRequest("Invalid report type. Use: financial, appointments, or patients.");
+    if (type === "patient-cases") {
+      const search = searchParams.get("search")?.trim() || "";
+      const patientId = searchParams.get("patientId")?.trim();
+
+      if (patientId) {
+        // Detailed single patient case dossier
+        const patientDossier = await prisma.patient.findUnique({
+          where: { id: patientId },
+          include: {
+            emergencyContact: true,
+            medicalHistory: true,
+            dentalInfo: true,
+            appointments: {
+              include: {
+                doctor: { include: { user: { select: { name: true } } } },
+                treatments: { include: { treatment: true } },
+              },
+              orderBy: { date: "desc" },
+            },
+            clinicalNotes: {
+              include: {
+                doctor: { include: { user: { select: { name: true } } } },
+                author: { select: { name: true } },
+              },
+              orderBy: { createdAt: "desc" },
+            },
+            treatmentPlans: {
+              include: {
+                doctor: { include: { user: { select: { name: true } } } },
+                items: { include: { treatment: true } },
+              },
+              orderBy: { createdAt: "desc" },
+            },
+            prescriptions: {
+              include: {
+                doctor: { include: { user: { select: { name: true } } } },
+                items: true,
+              },
+              orderBy: { date: "desc" },
+            },
+            invoices: {
+              include: { items: true, payments: true },
+              orderBy: { createdAt: "desc" },
+            },
+            documents: {
+              where: { isArchived: false },
+              orderBy: { uploadedAt: "desc" },
+            },
+          },
+        });
+
+        return NextResponse.json({
+          type: "patient-case-detail",
+          data: patientDossier,
+        });
+      }
+
+      // List of all patient clinical case summaries
+      const patientCases = await prisma.patient.findMany({
+        where: search
+          ? {
+              OR: [
+                { firstName: { contains: search } },
+                { lastName: { contains: search } },
+                { patientId: { contains: search } },
+                { phone: { contains: search } },
+              ],
+            }
+          : undefined,
+        include: {
+          medicalHistory: true,
+          appointments: {
+            orderBy: { date: "desc" },
+            take: 3,
+            include: {
+              doctor: { include: { user: { select: { name: true } } } },
+              treatments: { include: { treatment: true } },
+            },
+          },
+          clinicalNotes: {
+            orderBy: { createdAt: "desc" },
+            take: 3,
+            include: {
+              doctor: { include: { user: { select: { name: true } } } },
+            },
+          },
+          documents: {
+            where: { isArchived: false },
+            orderBy: { uploadedAt: "desc" },
+          },
+          prescriptions: {
+            orderBy: { date: "desc" },
+            take: 2,
+            include: { items: true },
+          },
+          _count: {
+            select: {
+              appointments: true,
+              clinicalNotes: true,
+              documents: true,
+              prescriptions: true,
+              invoices: true,
+            },
+          },
+        },
+        orderBy: { updatedAt: "desc" },
+        take: 30,
+      });
+
+      return NextResponse.json({
+        type: "patient-cases",
+        data: patientCases,
+      });
+    }
+
+    return badRequest("Invalid report type. Use: financial, appointments, patients, or patient-cases.");
   } catch (e) {
     console.error(e);
     return serverError();

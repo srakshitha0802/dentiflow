@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import {
@@ -21,37 +21,53 @@ import { toast } from "sonner";
 import { formatCurrency, invoiceStatusColors, cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 
+export default function InvoicesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6 animate-pulse">
+          <div className="h-10 w-64 bg-slate-200 rounded-xl" />
+          <div className="h-64 bg-white rounded-2xl border border-slate-200 p-6" />
+        </div>
+      }
+    >
+      <InvoicesContent />
+    </Suspense>
+  );
+}
+
 interface InvoiceItem {
   id?: string;
   treatmentId?: string;
-  description: string;
+  treatmentName: string;
   quantity: number;
   unitPrice: number;
-  tax: number;
-  amount: number;
+  taxPercent: number;
+  total: number;
 }
 
 interface Invoice {
   id: string;
   invoiceNumber: string;
-  invoiceDate: string;
-  dueDate: string;
+  patientId: string;
+  doctorId?: string;
+  appointmentId?: string;
   subtotal: number;
-  discountAmount: number;
-  taxAmount: number;
+  taxTotal: number;
+  discount: number;
   total: number;
   amountPaid: number;
   balanceDue: number;
   status: string;
   notes?: string;
+  invoiceDate: string;
+  dueDate: string;
   patient: {
     id: string;
     patientId: string;
     firstName: string;
     lastName: string;
     phone: string;
-    email?: string;
-    address?: string;
   };
   doctor?: {
     user: {
@@ -68,7 +84,7 @@ interface Invoice {
   }>;
 }
 
-export default function InvoicesPage() {
+function InvoicesContent() {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
 

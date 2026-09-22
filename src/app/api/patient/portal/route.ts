@@ -14,12 +14,23 @@ export async function GET(req: NextRequest) {
     }
 
     const cleanIdentifier = identifier.replace(/\s+/g, "");
+    const digitsOnly = identifier.replace(/\D/g, "");
+    const last10Digits = digitsOnly.length >= 10 ? digitsOnly.slice(-10) : digitsOnly;
+
+    const phoneMatches = Array.from(new Set([
+      cleanIdentifier,
+      digitsOnly,
+      last10Digits,
+      `+91${last10Digits}`,
+      `+91 ${last10Digits}`,
+      `0${last10Digits}`
+    ].filter(Boolean)));
 
     // Find patient by phone, email, or patientId
     const patient = await prisma.patient.findFirst({
       where: {
         OR: [
-          { phone: cleanIdentifier },
+          { phone: { in: phoneMatches } },
           { email: identifier.toLowerCase() },
           { patientId: identifier.toUpperCase() },
         ],
@@ -94,6 +105,13 @@ export async function GET(req: NextRequest) {
             },
           },
         },
+        documents: {
+          where: { isArchived: false },
+          orderBy: { uploadedAt: "desc" },
+        },
+        feedbacks: {
+          orderBy: { createdAt: "desc" },
+        },
       },
     });
 
@@ -128,6 +146,8 @@ export async function GET(req: NextRequest) {
       invoices: patient.invoices,
       prescriptions: patient.prescriptions,
       treatmentPlans: patient.treatmentPlans,
+      documents: patient.documents,
+      feedbacks: patient.feedbacks,
     });
   } catch (error) {
     console.error("Patient portal lookup failed:", error);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import {
@@ -21,25 +21,45 @@ import { toast } from "sonner";
 import { formatCurrency, cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 
+export default function TreatmentPlansPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6 animate-pulse">
+          <div className="h-10 w-64 bg-slate-200 rounded-xl" />
+          <div className="h-64 bg-white rounded-2xl border border-slate-200 p-6" />
+        </div>
+      }
+    >
+      <TreatmentPlansContent />
+    </Suspense>
+  );
+}
+
 interface TreatmentPlanItem {
   id?: string;
   treatmentId: string;
-  treatment?: { name: string; price: number };
-  toothNumbers?: string;
-  sessions: number;
-  estimatedCost: number;
+  treatment: {
+    id: string;
+    name: string;
+    price: number;
+  };
+  toothNumber?: number;
+  cost: number;
+  status: string;
   notes?: string;
 }
 
 interface TreatmentPlan {
   id: string;
   planId: string;
-  diagnosis?: string;
-  notes?: string;
+  diagnosis: string;
+  totalCost: number;
   status: string;
   priority: string;
-  estimatedCost: number;
+  notes?: string;
   createdAt: string;
+  patientId: string;
   patient: {
     id: string;
     patientId: string;
@@ -47,16 +67,18 @@ interface TreatmentPlan {
     lastName: string;
     phone: string;
   };
+  doctorId: string;
   doctor: {
     user: {
       name: string;
+      email: string;
     };
   };
   items: TreatmentPlanItem[];
 }
 
 const priorityStyles: Record<string, string> = {
-  LOW: "bg-slate-100 text-slate-700",
+  LOW: "bg-slate-100 text-slate-700 border-slate-200",
   MEDIUM: "bg-blue-50 text-blue-700 border-blue-200",
   HIGH: "bg-amber-50 text-amber-700 border-amber-200",
   URGENT: "bg-red-50 text-red-700 border-red-200",
@@ -70,7 +92,7 @@ const statusStyles: Record<string, string> = {
   CANCELLED: "bg-red-50 text-red-700 border-red-200",
 };
 
-export default function TreatmentPlansPage() {
+function TreatmentPlansContent() {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
 

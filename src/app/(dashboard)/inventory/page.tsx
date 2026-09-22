@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import {
@@ -21,6 +21,21 @@ import { toast } from "sonner";
 import { formatCurrency, cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 
+export default function InventoryPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6 animate-pulse">
+          <div className="h-10 w-64 bg-slate-200 rounded-xl" />
+          <div className="h-64 bg-white rounded-2xl border border-slate-200 p-6" />
+        </div>
+      }
+    >
+      <InventoryContent />
+    </Suspense>
+  );
+}
+
 interface InventoryItem {
   id: string;
   itemId: string;
@@ -37,7 +52,7 @@ interface InventoryItem {
   status: string;
 }
 
-export default function InventoryPage() {
+function InventoryContent() {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
 

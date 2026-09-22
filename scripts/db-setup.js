@@ -50,7 +50,7 @@ function runCommand(cmd, env = {}) {
   });
 }
 
-function setupDatabase() {
+async function setupDatabase() {
   console.log("==================================================");
   console.log("🏥 DentiFlow — Automated Database Setup & Verification");
   console.log("==================================================");
@@ -97,25 +97,23 @@ function setupDatabase() {
       datasources: { db: { url: dbUrl } },
     });
 
-    prisma.user
-      .count()
-      .then(async (userCount) => {
-        if (userCount === 0) {
-          console.log("[db-setup] 🌱 Database is empty. Running initial database seed...");
-          await prisma.$disconnect();
-          runCommand("npm run db:seed", { DATABASE_URL: dbUrl });
-          console.log("[db-setup] ✓ Database seeded with demo admin and clinical records!");
-        } else {
-          console.log(`[db-setup] ✓ Database already initialized with ${userCount} users. Skipping seed.`);
-          await prisma.$disconnect();
-        }
-      })
-      .catch(async (err) => {
-        console.warn("[db-setup] Note: Could not check user count directly:", err.message);
-        try {
-          await prisma.$disconnect();
-        } catch (_) {}
-      });
+    try {
+      const userCount = await prisma.user.count();
+      if (userCount === 0) {
+        console.log("[db-setup] 🌱 Database is empty. Running initial database seed...");
+        await prisma.$disconnect();
+        runCommand("npm run db:seed", { DATABASE_URL: dbUrl });
+        console.log("[db-setup] ✓ Database seeded with demo admin and clinical records!");
+      } else {
+        console.log(`[db-setup] ✓ Database already initialized with ${userCount} users. Skipping seed.`);
+        await prisma.$disconnect();
+      }
+    } catch (err) {
+      console.warn("[db-setup] Note: Could not check user count directly:", err.message);
+      try {
+        await prisma.$disconnect();
+      } catch (_) {}
+    }
   } catch (e) {
     console.warn("[db-setup] Prisma client validation note:", e.message);
   }
@@ -125,9 +123,14 @@ function setupDatabase() {
   console.log("==================================================");
 }
 
-try {
-  setupDatabase();
-} catch (error) {
-  console.error("[db-setup] ❌ Setup error:", error);
-  process.exit(1);
+async function run() {
+  try {
+    await setupDatabase();
+  } catch (error) {
+    console.error("[db-setup] ❌ Setup error:", error);
+    process.exit(1);
+  }
 }
+
+run();
+

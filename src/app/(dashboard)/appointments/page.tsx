@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO, isToday, isTomorrow } from "date-fns";
 import {
@@ -18,17 +18,47 @@ import {
   MoreVertical,
   Edit2,
   Trash2,
-  FileText,
-  Pill,
+  AlertCircle,
+  X,
+  Eye,
+  Download,
+  ExternalLink,
+  ImageIcon,
+  FolderOpen,
   ChevronLeft,
   ChevronRight,
-  AlertCircle,
-  X
+  FileText,
+  Pill
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatCurrency, formatTime, appointmentStatusColors, cn } from "@/lib/utils";
+import { formatCurrency, formatTime, appointmentStatusColors, calculateAge, cn } from "@/lib/utils";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+
+function parseSafeDate(dateStr: string): Date {
+  if (!dateStr || dateStr === "today") return new Date();
+  try {
+    const d = parseISO(dateStr);
+    return isNaN(d.getTime()) ? new Date() : d;
+  } catch {
+    return new Date();
+  }
+}
+
+export default function AppointmentsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6 animate-pulse">
+          <div className="h-10 w-64 bg-slate-200 rounded-xl" />
+          <div className="h-64 bg-white rounded-2xl border border-slate-200 p-6" />
+        </div>
+      }
+    >
+      <AppointmentsContent />
+    </Suspense>
+  );
+}
 
 interface Appointment {
   id: string;
@@ -38,36 +68,38 @@ interface Appointment {
   endTime: string;
   status: string;
   notes?: string;
+  patientId: string;
   patient: {
     id: string;
     patientId: string;
     firstName: string;
     lastName: string;
     phone: string;
-    email?: string;
+    dateOfBirth: string;
+    gender: string;
   };
+  doctorId: string;
   doctor: {
     id: string;
-    qualification: string;
     specialization: string;
     user: {
-      id: string;
       name: string;
     };
-  };
-  room?: {
-    id: string;
-    name: string;
   };
   treatments: Array<{
     id: string;
     treatment: {
       id: string;
       name: string;
-      duration: number;
       price: number;
     };
   }>;
+  invoice?: {
+    id: string;
+    invoiceNumber: string;
+    status: string;
+    balanceDue: number;
+  };
 }
 
 const statusBadgeStyles: Record<string, string> = {
@@ -80,11 +112,13 @@ const statusBadgeStyles: Record<string, string> = {
   NO_SHOW: "bg-slate-100 text-slate-700 border-slate-200",
 };
 
-export default function AppointmentsPage() {
+function AppointmentsContent() {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   
-  const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const initialDateParam = searchParams.get("date");
+  const defaultDate = initialDateParam === "today" || !initialDateParam ? format(new Date(), "yyyy-MM-dd") : initialDateParam;
+  const [selectedDate, setSelectedDate] = useState<string>(defaultDate);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [selectedDoctor, setSelectedDoctor] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -93,6 +127,24 @@ export default function AppointmentsPage() {
   const [isNewModalOpen, setIsNewModalOpen] = useState<boolean>(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
+
+  // Patient Reports & Case History modal state
+  const [historyPatientId, setHistoryPatientId] = useState<string | null>(null);
+  const [historyPatientName, setHistoryPatientName] = useState<string>("");
+  const [previewDoc, setPreviewDoc] = useState<any | null>(null);
+
+  // Fetch Patient Reports & Case Dossier
+  const { data: patientHistoryData, isLoading: isPatientHistoryLoading } = useQuery({
+    queryKey: ["patient-history-dossier", historyPatientId],
+    queryFn: async () => {
+      if (!historyPatientId) return null;
+      const res = await fetch(`/api/reports?type=patient-cases&patientId=${historyPatientId}`);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json.data?.patient || null;
+    },
+    enabled: Boolean(historyPatientId),
+  });
 
   useEffect(() => {
     if (searchParams.get("action") === "new" || searchParams.get("new") === "true") {
@@ -299,7 +351,7 @@ export default function AppointmentsPage() {
               onClick={() => setSelectedDate(format(new Date(), "yyyy-MM-dd"))}
               className={cn(
                 "px-3 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer",
-                isToday(parseISO(selectedDate))
+                isToday(parseSafeDate(selectedDate))
                   ? "bg-blue-600 text-white"
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               )}
@@ -314,7 +366,7 @@ export default function AppointmentsPage() {
               }}
               className={cn(
                 "px-3 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer",
-                isTomorrow(parseISO(selectedDate))
+                isTomorrow(parseSafeDate(selectedDate))
                   ? "bg-blue-600 text-white"
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               )}
@@ -386,7 +438,7 @@ export default function AppointmentsPage() {
           <div className="flex items-center gap-2">
             <CalendarIcon className="w-5 h-5 text-blue-600" />
             <h2 className="font-semibold text-slate-900">
-              Schedule for {format(parseISO(selectedDate), "MMMM d, yyyy")}
+              Schedule for {format(parseSafeDate(selectedDate), "MMMM d, yyyy")}
             </h2>
             <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">
               {filteredAppointments.length} Bookings
@@ -544,6 +596,18 @@ export default function AppointmentsPage() {
                         Cancel
                       </button>
                     )}
+
+                    <button
+                      onClick={() => {
+                        setHistoryPatientId(apt.patient.id);
+                        setHistoryPatientName(`${apt.patient.firstName} ${apt.patient.lastName}`);
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg border border-indigo-200 transition cursor-pointer"
+                      title="View Clinical Reports, Previous Files & Diagnoses"
+                    >
+                      <FolderOpen className="w-3.5 h-3.5 text-indigo-600" />
+                      Reports & Files
+                    </button>
 
                     <button
                       onClick={() => {
@@ -818,19 +882,298 @@ export default function AppointmentsPage() {
               )}
             </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-              <Link
-                href={`/invoices?action=new&patientId=${selectedAppointment.patient.id}&appointmentId=${selectedAppointment.id}`}
-                className="px-3 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold text-xs rounded-xl transition cursor-pointer"
-              >
-                Bill Patient (Invoice)
-              </Link>
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const pId = selectedAppointment.patient.id;
+                    const pName = `${selectedAppointment.patient.firstName} ${selectedAppointment.patient.lastName}`;
+                    setIsDetailModalOpen(false);
+                    setHistoryPatientId(pId);
+                    setHistoryPatientName(pName);
+                  }}
+                  className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs rounded-xl border border-indigo-200 transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <FolderOpen className="w-3.5 h-3.5" />
+                  Previous Reports & Files
+                </button>
+                <Link
+                  href={`/invoices?action=new&patientId=${selectedAppointment.patient.id}&appointmentId=${selectedAppointment.id}`}
+                  className="px-3 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold text-xs rounded-xl transition cursor-pointer"
+                >
+                  Invoice
+                </Link>
+              </div>
+
               <button
                 onClick={() => setIsDetailModalOpen(false)}
                 className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl transition cursor-pointer"
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Patient Previous Reports & Clinical Dossier View */}
+      {historyPatientId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <span className="text-xs text-indigo-600 font-bold uppercase tracking-wider">
+                  Clinical Case Dossier & Previous Reports
+                </span>
+                <h3 className="text-xl font-bold text-slate-900">
+                  {historyPatientName} {patientHistoryData?.patientId ? `(${patientHistoryData.patientId})` : ""}
+                </h3>
+              </div>
+              <button
+                onClick={() => setHistoryPatientId(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {isPatientHistoryLoading ? (
+              <div className="p-12 text-center text-slate-400 text-sm">
+                Retrieving patient medical reports, previous consultation records, and files...
+              </div>
+            ) : !patientHistoryData ? (
+              <div className="p-8 bg-slate-50 rounded-xl text-center border border-slate-200 text-sm text-slate-500">
+                No past reports or history found for this patient.
+              </div>
+            ) : (
+              <div className="space-y-4 text-xs">
+                {/* Patient Summary Header */}
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div>
+                    <span className="text-slate-400 block">Age & Gender</span>
+                    <span className="font-bold text-slate-800">
+                      {calculateAge(new Date(patientHistoryData.dateOfBirth))} yrs, {patientHistoryData.gender}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Phone</span>
+                    <span className="font-bold text-slate-800">{patientHistoryData.phone}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Total Visits</span>
+                    <span className="font-bold text-indigo-700">{patientHistoryData.appointments?.length || 0} Consultations</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Diagnostic Files</span>
+                    <span className="font-bold text-emerald-700">{patientHistoryData.documents?.length || 0} Attached</span>
+                  </div>
+                </div>
+
+                {/* Medical History & Allergies Alert */}
+                {patientHistoryData.medicalHistory && (
+                  <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl space-y-1 text-slate-700">
+                    <span className="font-bold text-amber-900 uppercase text-[10px] tracking-wide">
+                      Medical Background & Alerts
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
+                      <div>
+                        <span className="font-semibold text-slate-900">Allergies: </span>
+                        {patientHistoryData.medicalHistory.allergies || "None declared"}
+                      </div>
+                      <div>
+                        <span className="font-semibold text-slate-900">Conditions: </span>
+                        {patientHistoryData.medicalHistory.conditions || "None reported"}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Attached Files & Diagnostic Scans */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-900 uppercase tracking-wide">
+                      Uploaded Diagnostic Reports & Scans ({patientHistoryData.documents?.length || 0})
+                    </span>
+                  </div>
+
+                  {(!patientHistoryData.documents || patientHistoryData.documents.length === 0) ? (
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-400 italic">
+                      No X-rays or diagnostic files uploaded for this patient yet.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {patientHistoryData.documents.map((doc: any) => {
+                        const isImg = doc.mimeType?.startsWith("image/") || /\.(jpg|jpeg|png|webp|gif)$/i.test(doc.url);
+                        return (
+                          <div
+                            key={doc.id}
+                            className="p-2.5 bg-white border border-slate-200 rounded-xl hover:border-indigo-300 transition flex items-center justify-between gap-2"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-7 h-7 rounded bg-indigo-50 text-indigo-700 flex items-center justify-center shrink-0">
+                                {isImg ? <ImageIcon className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-bold text-slate-900 truncate">{doc.name}</div>
+                                <div className="text-[10px] text-slate-400">
+                                  {doc.type?.replace(/_/g, " ")} • {format(parseISO(doc.uploadedAt), "MMM d, yyyy")}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {isImg && (
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewDoc(doc)}
+                                  className="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded cursor-pointer"
+                                  title="Preview"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              <a
+                                href={doc.url}
+                                download={doc.name}
+                                className="p-1 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded"
+                                title="Download"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                              </a>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Previous Appointments & Doctor Diagnoses */}
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <span className="font-bold text-slate-900 uppercase tracking-wide">
+                    Previous Consultations & Doctor Notes ({patientHistoryData.appointments?.length || 0})
+                  </span>
+
+                  {(!patientHistoryData.appointments || patientHistoryData.appointments.length === 0) ? (
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-400 italic">
+                      No previous consultations recorded.
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                      {patientHistoryData.appointments.map((apt: any) => (
+                        <div
+                          key={apt.id}
+                          className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900">
+                                {format(parseISO(apt.date), "MMMM d, yyyy")}
+                              </span>
+                              <span className="text-slate-500">({apt.startTime} - {apt.endTime})</span>
+                              <span className="px-1.5 py-0.2 bg-white text-slate-700 border border-slate-200 rounded text-[10px] font-semibold">
+                                {apt.status}
+                              </span>
+                            </div>
+                            <span className="text-slate-600 font-medium">
+                              Dr. {apt.doctor?.user?.name || "Dentist"}
+                            </span>
+                          </div>
+
+                          {apt.treatments && apt.treatments.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {apt.treatments.map((t: any) => (
+                                <span
+                                  key={t.id}
+                                  className="bg-blue-50 text-blue-700 px-1.5 py-0.2 rounded text-[10px] font-medium"
+                                >
+                                  {t.treatment?.name}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {apt.notes && (
+                            <div className="p-2 bg-white rounded border border-slate-200 text-slate-700 italic">
+                              <span className="font-semibold not-italic text-slate-900">Doctor Note: </span>
+                              {apt.notes}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Prescriptions */}
+                {patientHistoryData.prescriptions && patientHistoryData.prescriptions.length > 0 && (
+                  <div className="space-y-2 pt-2 border-t border-slate-100">
+                    <span className="font-bold text-slate-900 uppercase tracking-wide">
+                      Prescribed Medications ({patientHistoryData.prescriptions.length})
+                    </span>
+                    <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                      {patientHistoryData.prescriptions.map((rx: any) => (
+                        <div key={rx.id} className="p-2 bg-amber-50/50 border border-amber-200 rounded-lg">
+                          <div className="flex items-center justify-between font-bold text-amber-900 mb-1">
+                            <span>Rx #{rx.prescriptionId} • {format(parseISO(rx.date || rx.createdAt), "MMM d, yyyy")}</span>
+                            <span>Dr. {rx.doctor?.user?.name}</span>
+                          </div>
+                          {rx.items?.map((it: any) => (
+                            <div key={it.id} className="text-slate-800 text-[11px]">
+                              • <span className="font-semibold">{it.medicineName}</span> ({it.dosage}) - {it.frequency}, {it.duration}
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+              <Link
+                href={`/reports?tab=patient-cases&patientId=${historyPatientId}`}
+                target="_blank"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl border border-indigo-200 transition"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                Open Full Printable Case Dossier
+              </Link>
+              <button
+                onClick={() => setHistoryPatientId(null)}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl transition cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Preview Lightbox */}
+      {previewDoc && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-3xl w-full p-4 shadow-2xl space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <span className="font-bold text-sm text-slate-900">{previewDoc.name}</span>
+              <button onClick={() => setPreviewDoc(null)} className="p-1 text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="bg-slate-950 rounded-xl p-2 flex items-center justify-center min-h-[300px] max-h-[60vh] overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={previewDoc.url} alt={previewDoc.name} className="max-h-[55vh] object-contain rounded-lg" />
+            </div>
+            <div className="flex justify-end pt-1">
+              <a
+                href={previewDoc.url}
+                target="_blank"
+                rel="noreferrer"
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs rounded-lg transition"
+              >
+                Open Full Size
+              </a>
             </div>
           </div>
         </div>

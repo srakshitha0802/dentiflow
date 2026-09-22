@@ -724,7 +724,114 @@ async function main() {
       }
     }
   }
-  console.log("✓ Notifications seeded");
+  // ─── Feedbacks & Reviews ──────────────────────────────────────
+  const sampleFeedbacks = [
+    {
+      patientName: "Kavitha Sundaram",
+      patientPhone: "9876543210",
+      rating: 5,
+      category: "TREATMENT",
+      comment: "Completely pain-free root canal treatment! Dr. Ananya was so gentle and explained each step on the digital imaging monitor. Exceptional clinic hygiene standards.",
+      treatment: "Root Canal & Zirconia Crown",
+      doctorName: "Dr. Ananya Rao",
+      isPublic: true,
+    },
+    {
+      patientName: "Rahul Verma",
+      patientPhone: "9811111111",
+      rating: 5,
+      category: "DOCTOR",
+      comment: "The 3D smile design preview was incredible! Extremely knowledgeable orthodontist, transparent pricing, and zero wait time.",
+      treatment: "Invisible Aligners Consultation",
+      doctorName: "Dr. Vikram Sethi",
+      isPublic: true,
+    },
+    {
+      patientName: "Meera Krishnan",
+      patientPhone: "9822222222",
+      rating: 5,
+      category: "CLEANLINESS",
+      comment: "Hospital-grade European sterilization standards and super polite reception desk. Accessing invoices and previous X-Rays via the mobile portal made everything effortless!",
+      treatment: "Ultrasonic Teeth Cleaning & Scaling",
+      doctorName: "Dr. Sneha Patil",
+      isPublic: true,
+    },
+    {
+      patientName: "Amitabh Sen",
+      patientPhone: "9833333333",
+      rating: 5,
+      category: "GENERAL",
+      comment: "Quick online booking, seamless UPI billing, and great diagnostic care. The best dental clinic in Bengaluru by far.",
+      treatment: "Dental Implant Consultation",
+      doctorName: "Dr. Ananya Rao",
+      isPublic: true,
+    },
+  ];
+
+  const firstPatient = await prisma.patient.findFirst({ where: { phone: "9876543210" } });
+  for (const fb of sampleFeedbacks) {
+    const existing = await prisma.feedback.findFirst({
+      where: { patientName: fb.patientName, comment: fb.comment },
+    });
+    if (!existing) {
+      await prisma.feedback.create({
+        data: {
+          patientId: firstPatient?.id || null,
+          patientName: fb.patientName,
+          patientPhone: fb.patientPhone,
+          rating: fb.rating,
+          category: fb.category,
+          comment: fb.comment,
+          treatment: fb.treatment,
+          doctorName: fb.doctorName,
+          isPublic: fb.isPublic,
+        },
+      });
+    }
+  }
+  console.log("✓ Feedbacks & Testimonials seeded");
+
+  // ─── Patient Documents ─────────────────────────────────────────
+  if (firstPatient) {
+    const sampleDocs = [
+      {
+        name: "Full Mouth Panoramic OPG X-Ray",
+        type: "X_RAY",
+        url: "/images/hero_clinic.jpg",
+        size: 2450000,
+        mimeType: "image/jpeg",
+        uploadedBy: "Patient (Self Upload)",
+      },
+      {
+        name: "Previous Orthodontic Treatment History",
+        type: "PREVIOUS_RECORD",
+        url: "/images/treatment_cleaning.jpg",
+        size: 1840000,
+        mimeType: "image/jpeg",
+        uploadedBy: "Dr. Ananya Rao (DENTIST)",
+      },
+    ];
+
+    for (const d of sampleDocs) {
+      const existing = await prisma.patientDocument.findFirst({
+        where: { patientId: firstPatient.id, name: d.name },
+      });
+      if (!existing) {
+        await prisma.patientDocument.create({
+          data: {
+            patientId: firstPatient.id,
+            name: d.name,
+            type: d.type,
+            url: d.url,
+            size: d.size,
+            mimeType: d.mimeType,
+            uploadedBy: d.uploadedBy,
+          },
+        });
+      }
+    }
+    console.log("✓ Sample patient documents seeded");
+  }
 
   console.log("\n🎉 Database seeded successfully!");
   console.log("\n📋 Demo accounts:");
