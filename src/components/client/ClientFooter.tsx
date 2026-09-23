@@ -10,6 +10,8 @@ import {
   HeartHandshake,
   ArrowRight,
 } from "lucide-react";
+import { getBasePath } from "@/lib/basePath";
+
 
 export default function ClientFooter() {
   return (
@@ -59,7 +61,7 @@ export default function ClientFooter() {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0">
                 <img
-                  src="/images/logo.png"
+                  src={`${getBasePath()}/images/logo.png`}
                   alt="DentiFlow"
                   className="w-full h-full object-cover"
                 />

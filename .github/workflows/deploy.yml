@@ -54,6 +54,7 @@ jobs:
           GITHUB_PAGES: "true"
           NEXT_EXPORT: "true"
           NODE_ENV: "production"
+          NEXT_PUBLIC_BASE_PATH: "/dentiflow"
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3

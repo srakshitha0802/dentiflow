@@ -16,6 +16,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getBasePath } from "@/lib/basePath";
+
 
 export default function ClientNavbar() {
   const pathname = usePathname();
@@ -73,7 +75,7 @@ export default function ClientNavbar() {
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-slate-900 shrink-0 group-hover:border-teal-500 transition-colors">
               <img
-                src="/images/logo.png"
+                src={`${getBasePath()}/images/logo.png`}
                 alt="DentiFlow Logo"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform"
               />

@@ -34,6 +34,57 @@ import {
 import ClientNavbar from "@/components/client/ClientNavbar";
 import ClientFooter from "@/components/client/ClientFooter";
 import { formatCurrency, cn } from "@/lib/utils";
+import { getBasePath } from "@/lib/basePath";
+
+
+
+// ─── Static fallback data shown when API is unavailable (GitHub Pages / static export) ───
+const STATIC_TREATMENTS = [
+  { id: "t1", name: "Teeth Cleaning & Scaling", category: { name: "Preventive" }, duration: 45, description: "Ultrasonic plaque and tartar removal with stain polishing and enamel protection." },
+  { id: "t2", name: "Root Canal Treatment", category: { name: "Restorative" }, duration: 90, description: "Pain-free computerized root canal with biocompatible fillings and digital X-ray guidance." },
+  { id: "t3", name: "Dental Implants", category: { name: "Surgical" }, duration: 120, description: "Titanium implant placement with 3D guided surgery for a permanent natural-looking tooth." },
+  { id: "t4", name: "Clear Invisible Aligners", category: { name: "Orthodontic" }, duration: 60, description: "Discreet 3D digital alignment to straighten smiles with zero metal brackets." },
+  { id: "t5", name: "Laser Teeth Whitening", category: { name: "Cosmetic" }, duration: 60, description: "Advanced laser whitening to brighten your smile by up to 8 shades in a single visit." },
+  { id: "t6", name: "Zirconia Dental Crowns", category: { name: "Restorative" }, duration: 90, description: "Precision-milled tooth-colored zirconia crowns for superior strength and aesthetics." },
+  { id: "t7", name: "Wisdom Tooth Extraction", category: { name: "Surgical" }, duration: 60, description: "Safe and gentle surgical removal under local anaesthesia with post-op care guidance." },
+  { id: "t8", name: "Gum Disease Treatment", category: { name: "Preventive" }, duration: 60, description: "Deep cleaning and laser therapy for gingivitis, periodontitis, and bleeding gums." },
+  { id: "t9", name: "Full Mouth Rehabilitation", category: { name: "Cosmetic" }, duration: 180, description: "Comprehensive restoration combining crowns, veneers, implants, and whitening for a complete smile makeover." },
+];
+
+const STATIC_CATEGORIES = [
+  { id: "c1", name: "Preventive" },
+  { id: "c2", name: "Restorative" },
+  { id: "c3", name: "Surgical" },
+  { id: "c4", name: "Orthodontic" },
+  { id: "c5", name: "Cosmetic" },
+];
+
+const STATIC_DOCTORS = (basePath: string) => [
+  {
+    id: "d1",
+    name: "Dr. Ananya Rao",
+    specialization: "Chief Dental Surgeon",
+    qualification: "BDS, MDS (Oral & Maxillofacial Surgery)",
+    bio: "12+ years of clinical excellence in complex implant surgeries and full-mouth rehabilitation. Pioneer of painless laser dentistry in Bengaluru.",
+    avatar: `${basePath}/images/doctor_ananya.jpg`,
+  },
+  {
+    id: "d2",
+    name: "Dr. Vikram Sethi",
+    specialization: "Orthodontist & Aligner Specialist",
+    qualification: "BDS, MDS (Orthodontics)",
+    bio: "Expert in clear aligner therapy and lingual braces. Certified Invisalign provider with 1,500+ successful alignment cases.",
+    avatar: `${basePath}/images/doctor_arjun.jpg`,
+  },
+  {
+    id: "d3",
+    name: "Dr. Sneha Patil",
+    specialization: "Cosmetic & Restorative Dentist",
+    qualification: "BDS, MDS (Conservative Dentistry & Endodontics)",
+    bio: "Specialist in smile design, zirconia veneers, and painless root canal treatments with digital magnification loupe technology.",
+    avatar: `${basePath}/images/doctor_priya.jpg`,
+  },
+];
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -95,9 +146,11 @@ export default function HomePage() {
   });
 
 
-  const categories = treatmentsData?.categories || [];
-  const treatments = treatmentsData?.treatments || [];
-  const doctors = doctorsData?.data || [];
+  const categories = treatmentsData?.categories?.length ? treatmentsData.categories : STATIC_CATEGORIES;
+  const treatments = treatmentsData?.treatments?.length ? treatmentsData.treatments : STATIC_TREATMENTS;
+  const basePath = getBasePath();
+  const doctors = doctorsData?.data?.length ? doctorsData.data : STATIC_DOCTORS(basePath);
+
   const publicFeedbacks = feedbackData?.feedbacks || [];
   const feedbackStats = feedbackData?.stats || {
     total: 0,
@@ -145,7 +198,7 @@ export default function HomePage() {
           <div className="absolute inset-0 z-0 overflow-hidden">
             <video
               ref={videoRef}
-              src="/teethvideo.mp4"
+              src={`${getBasePath()}/teethvideo.mp4`}
               autoPlay
               loop
               muted={isMuted}
@@ -358,7 +411,7 @@ export default function HomePage() {
                 <div className="w-full sm:w-1/2 rounded-2xl overflow-hidden bg-slate-100 h-48 relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src="/images/treatment_cleaning.jpg"
+                    src={`${getBasePath()}/images/treatment_cleaning.jpg`}
                     alt="Dental Cleaning & Scaling"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
@@ -395,7 +448,7 @@ export default function HomePage() {
                 <div className="w-full sm:w-1/2 rounded-2xl overflow-hidden bg-slate-100 h-48 relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src="/images/treatment_aligners.jpg"
+                    src={`${getBasePath()}/images/treatment_aligners.jpg`}
                     alt="Clear Aligners & Orthodontics"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
@@ -532,7 +585,7 @@ export default function HomePage() {
                     <div className="relative h-68 w-full bg-slate-100 overflow-hidden">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={doc.avatar || "/images/doctor_ananya.jpg"}
+                        src={doc.avatar || `${getBasePath()}/images/doctor_ananya.jpg`}
                         alt={doc.name}
                         className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
                       />
@@ -627,7 +680,7 @@ export default function HomePage() {
                   <div className="relative rounded-2xl overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src="/images/facility_interior.jpg"
+                      src={`${getBasePath()}/images/facility_interior.jpg`}
                       alt="DentalCare Pro Clinic Facility & Waiting Suite"
                       className="w-full h-80 sm:h-[420px] object-cover"
                     />
