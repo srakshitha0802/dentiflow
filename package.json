@@ -4,10 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack -p 3000",
-
-    "build": "node scripts/db-setup.js && next build",
+    "build": "next build",
     "build:pages": "GITHUB_PAGES=true next build",
-    "start": "node scripts/db-setup.js && next start",
+    "start": "next start",
     "serve": "node server.js",
     "postinstall": "prisma generate",
     "lint": "eslint",
@@ -16,6 +15,7 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "ts-node --compiler-options '{\"module\":\"commonjs\"}' prisma/seed.ts",
+    "db:seed:js": "node scripts/seed.js",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset --force",
     "setup": "node scripts/db-setup.js"
