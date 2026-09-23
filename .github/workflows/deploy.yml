@@ -38,6 +38,8 @@ jobs:
 
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Build Static Next.js Application
         run: npx next build
