@@ -3,22 +3,27 @@ services:
     name: dentiflow-clinic
     env: node
     plan: free
-    buildCommand: npm install && npm run build
-    startCommand: npm run start
+    buildCommand: npm install --legacy-peer-deps && npm run build
+    startCommand: node scripts/db-setup.js && node server.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: AUTH_TRUST_HOST
         value: "true"
       - key: NEXTAUTH_URL
-        sync: false
+        value: "https://dentiflow-hat8.onrender.com"
       - key: AUTH_SECRET
         generateValue: true
       - key: NEXTAUTH_SECRET
         fromEnvVar: AUTH_SECRET
       - key: DATABASE_URL
-        value: file:./dev.db
+        value: "file:./dev.db"
       - key: UPLOAD_DIR
-        value: ./public/uploads
+        value: "./public/uploads"
       - key: MAX_FILE_SIZE_MB
         value: "10"
+      - key: HOSTNAME
+        value: "0.0.0.0"
+      - key: PORT
+        value: "3000"
+

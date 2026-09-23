@@ -105,7 +105,15 @@ async function setupDatabase() {
       if (userCount === 0) {
         console.log("[db-setup] 🌱 Database is empty. Running initial database seed...");
         await prisma.$disconnect();
-        runCommand("npm run db:seed", { DATABASE_URL: dbUrl });
+        // Use plain JS seed script (no ts-node required) for reliable Render/production deployment
+        const seedScript = fs.existsSync(path.join(rootDir, "scripts", "seed.js"))
+          ? path.join(rootDir, "scripts", "seed.js")
+          : null;
+        if (seedScript) {
+          runCommand(`node "${seedScript}"`, { DATABASE_URL: dbUrl });
+        } else {
+          runCommand("npm run db:seed", { DATABASE_URL: dbUrl });
+        }
         console.log("[db-setup] ✓ Database seeded with demo admin and clinical records!");
       } else {
         console.log(`[db-setup] ✓ Database already initialized with ${userCount} users. Skipping seed.`);
