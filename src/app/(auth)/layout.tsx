@@ -1,8 +1,19 @@
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
+"use client";
 
-export default async function AuthLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth();
-  if (session?.user) redirect("/dashboard");
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "authenticated" && session?.user) {
+      router.replace("/dashboard");
+    }
+  }, [session, status, router]);
+
   return <>{children}</>;
 }
+
