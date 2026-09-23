@@ -8,16 +8,17 @@ export function cn(...inputs: ClassValue[]) {
 
 // ─── Number Formatting ───────────────────────────────────────
 export function formatCurrency(
-  amount: number,
+  amount?: number | null,
   currency: string = "INR",
   locale: string = "en-IN"
 ): string {
+  const safeAmount = typeof amount === "number" && !isNaN(amount) ? amount : 0;
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount);
+  }).format(safeAmount);
 }
 
 // ─── Date Formatting ─────────────────────────────────────────
