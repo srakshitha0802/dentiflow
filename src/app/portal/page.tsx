@@ -157,9 +157,10 @@ function PatientPortalContent() {
       }
       return res.json();
     },
-    enabled: Boolean(activeIdentifier),
+    enabled: Boolean(activeIdentifier && typeof window !== "undefined"),
     retry: false,
   });
+
 
   // Fetch Slots for Reschedule Modal
   const { data: rescheduleSlotsData, isLoading: rescheduleSlotsLoading } = useQuery({

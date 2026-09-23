@@ -40,9 +40,11 @@ interface InvoiceItem {
   id?: string;
   treatmentId?: string;
   treatmentName: string;
+  description?: string;
   quantity: number;
   unitPrice: number;
   taxPercent: number;
+  amount?: number;
   total: number;
 }
 
@@ -54,6 +56,7 @@ interface Invoice {
   appointmentId?: string;
   subtotal: number;
   taxTotal: number;
+  taxAmount?: number;
   discount: number;
   total: number;
   amountPaid: number;

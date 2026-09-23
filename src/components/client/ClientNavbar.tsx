@@ -29,9 +29,9 @@ export default function ClientNavbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs transition-all">
+    <header className="sticky top-0 z-50 glass-panel border-b border-white/60 shadow-sm transition-all backdrop-blur-xl">
       {/* Top Clinical Header Ribbon */}
-      <div className="bg-slate-900 text-white text-xs py-1.5 px-4">
+      <div className="bg-slate-950/95 text-white text-xs py-1.5 px-4 border-b border-white/10">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="flex h-2 w-2 relative">
@@ -71,7 +71,7 @@ export default function ClientNavbar() {
         <div className="flex items-center justify-between h-20">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-slate-900 shrink-0">
+            <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-slate-900 shrink-0 group-hover:border-teal-500 transition-colors">
               <img
                 src="/images/logo.png"
                 alt="DentiFlow Logo"
@@ -83,7 +83,7 @@ export default function ClientNavbar() {
                 <span className="text-xl font-black tracking-tight text-slate-900">
                   Denti<span className="text-teal-700">Flow</span>
                 </span>
-                <span className="px-1.5 py-0.5 text-[10px] font-bold bg-teal-50 text-teal-800 rounded-md border border-teal-200">
+                <span className="px-2 py-0.5 text-[10px] font-bold bg-teal-50 text-teal-800 rounded-md border border-teal-200/80 shadow-xs">
                   CLINIC
                 </span>
               </div>
@@ -94,7 +94,7 @@ export default function ClientNavbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-1.5 bg-slate-100/60 p-1.5 rounded-2xl border border-slate-200/60 backdrop-blur-md">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -102,10 +102,10 @@ export default function ClientNavbar() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "px-3.5 py-2 rounded-xl text-sm font-semibold transition-all",
+                    "px-4 py-2 rounded-xl text-xs font-bold transition-all",
                     isActive
-                      ? "text-teal-800 bg-teal-50 font-bold border border-teal-100"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                      ? "text-teal-900 bg-white shadow-xs font-black border border-slate-200/70"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                   )}
                 >
                   {link.label}
@@ -118,7 +118,7 @@ export default function ClientNavbar() {
           <div className="hidden sm:flex items-center gap-2.5">
             <Link
               href="/login?tab=patient"
-              className="px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:text-teal-800 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1.5 border border-slate-200"
+              className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:text-teal-900 glass-pill hover:bg-white transition-all flex items-center gap-1.5 border border-slate-200/90 shadow-xs hover-lift"
             >
               <LogIn className="w-4 h-4 text-teal-700" />
               <span>Patient Login</span>
@@ -126,9 +126,9 @@ export default function ClientNavbar() {
 
             <Link
               href="/book"
-              className="px-5 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-sm font-bold shadow-sm transition-all flex items-center gap-2"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-700 to-teal-800 hover:from-teal-800 hover:to-teal-900 text-white text-xs font-bold shadow-md hover:shadow-teal-700/25 transition-all flex items-center gap-2 glass-shimmer"
             >
-              <Calendar className="w-4 h-4" />
+              <Calendar className="w-4 h-4 text-teal-200" />
               <span>Book Appointment</span>
             </Link>
           </div>

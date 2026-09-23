@@ -114,9 +114,22 @@ Patients log in via their registered **Phone Number**, **Email**, or **Patient I
 
 ---
 
-## Deploying to Render
+## Live Demo & Deployment
 
-DentiFlow is preconfigured with zero-configuration automated database setup and auto-seeding for Render.
+- 🌐 **GitHub Pages Demo**: [https://srakshitha0802.github.io/dentiflow](https://srakshitha0802.github.io/dentiflow)
+- 🚀 **Fullstack Production Deployment**: Render / Vercel / Railway with auto-configured PostgreSQL or SQLite.
+
+### GitHub Pages Setup Instructions
+1. Navigate to your repository on GitHub: [https://github.com/srakshitha0802/dentiflow](https://github.com/srakshitha0802/dentiflow)
+2. Go to **Settings** > **Pages**.
+3. Under **Build and deployment** > **Source**, select **GitHub Actions**.
+4. Push your changes to the `main` branch. The automated workflow in `.github/workflows/deploy.yml` will automatically build and publish the site!
+
+---
+
+## Deploying to Render / Cloud Platforms
+
+DentiFlow is preconfigured with zero-configuration automated database setup and auto-seeding for Render, Railway, Vercel, and Docker.
 
 ### Option A: 1-Click / Blueprint Deployment
 1. Connect your repository to Render.
@@ -150,4 +163,5 @@ DentiFlow is preconfigured with zero-configuration automated database setup and 
 ## License
 
 This project is licensed under the MIT License.
+
 

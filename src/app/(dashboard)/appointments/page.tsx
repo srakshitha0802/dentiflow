@@ -94,6 +94,10 @@ interface Appointment {
       price: number;
     };
   }>;
+  room?: {
+    id?: string;
+    name: string;
+  } | null;
   invoice?: {
     id: string;
     invoiceNumber: string;

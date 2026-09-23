@@ -13,14 +13,17 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             staleTime: 60 * 1000, // 1 minute
             refetchOnWindowFocus: false,
             retry: 1,
+            enabled: typeof window !== "undefined",
           },
         },
       })
   );
 
+
   return (
-    <SessionProvider>
+    <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </SessionProvider>
+
   );
 }

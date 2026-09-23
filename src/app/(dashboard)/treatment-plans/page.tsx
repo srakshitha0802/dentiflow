@@ -45,7 +45,9 @@ interface TreatmentPlanItem {
     price: number;
   };
   toothNumber?: number;
+  toothNumbers?: string;
   cost: number;
+  estimatedCost?: number;
   status: string;
   notes?: string;
 }
@@ -55,6 +57,7 @@ interface TreatmentPlan {
   planId: string;
   diagnosis: string;
   totalCost: number;
+  estimatedCost?: number;
   status: string;
   priority: string;
   notes?: string;

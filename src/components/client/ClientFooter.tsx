@@ -81,14 +81,14 @@ export default function ClientFooter() {
             <div className="pt-2 flex items-center gap-3">
               <Link
                 href="/book"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-xl text-xs font-bold transition shadow-md glass-shimmer"
               >
                 <span>Book Appointment</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
               <Link
                 href="/portal"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition border border-slate-700"
+                className="inline-flex items-center gap-2 px-4 py-2 glass-dark-card hover:bg-slate-800 text-slate-200 rounded-xl text-xs font-semibold transition border border-slate-700"
               >
                 <span>Patient Portal</span>
               </Link>

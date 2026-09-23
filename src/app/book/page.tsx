@@ -117,6 +117,7 @@ function BookAppointmentContent() {
       if (!res.ok) return { categories: [], treatments: [] };
       return res.json();
     },
+    enabled: typeof window !== "undefined",
   });
 
   // 2. Fetch doctors
@@ -127,7 +128,9 @@ function BookAppointmentContent() {
       if (!res.ok) return { data: [] };
       return res.json();
     },
+    enabled: typeof window !== "undefined",
   });
+
 
   const treatments = treatmentsData?.treatments || [];
   const categories = treatmentsData?.categories || [];

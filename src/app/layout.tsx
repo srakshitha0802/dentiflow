@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import Providers from "@/components/providers";
 
-const inter = Inter({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-sans",
+  weight: ["300", "400", "500", "600", "700", "800"],
+  display: "swap",
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-heading",
+  weight: ["400", "500", "600", "700", "800", "900"],
   display: "swap",
 });
 
@@ -26,8 +34,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`}>
+    <html lang="en" className={`${plusJakartaSans.variable} ${outfit.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
+      <body className="font-sans antialiased selection:bg-teal-600 selection:text-white">
         <Providers>
           {children}
           <Toaster

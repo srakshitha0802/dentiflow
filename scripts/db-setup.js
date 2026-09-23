@@ -83,11 +83,14 @@ async function setupDatabase() {
 
   // 2. Generate Prisma Client
   console.log("[db-setup] Generating Prisma Client...");
-  runCommand("npx prisma generate", { DATABASE_URL: dbUrl });
+  const prismaBin = fs.existsSync(path.join(rootDir, "node_modules", ".bin", "prisma"))
+    ? path.join(rootDir, "node_modules", ".bin", "prisma")
+    : "npx prisma";
+  runCommand(`"${prismaBin}" generate`, { DATABASE_URL: dbUrl });
 
   // 3. Push schema to database
   console.log("[db-setup] Synchronizing schema with database tables...");
-  runCommand("npx prisma db push --accept-data-loss", { DATABASE_URL: dbUrl });
+  runCommand(`"${prismaBin}" db push --accept-data-loss`, { DATABASE_URL: dbUrl });
 
   // 4. Auto-Seed if database is empty
   console.log("[db-setup] Checking if database needs initial seeding...");

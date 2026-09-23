@@ -59,6 +59,7 @@ interface Prescription {
   doctorId: string;
   doctor: {
     specialization: string;
+    qualification?: string;
     registrationNumber: string;
     user: {
       name: string;
