@@ -42,7 +42,14 @@ jobs:
           enablement: true
 
       - name: Build Static Next.js Application
-        run: npx next build
+        run: |
+          if [ -d "src/app/api" ]; then
+            mv src/app/api src/_api_backup
+          fi
+          npx next build
+          if [ -d "src/_api_backup" ]; then
+            mv src/_api_backup src/app/api
+          fi
         env:
           GITHUB_PAGES: "true"
           NEXT_EXPORT: "true"
